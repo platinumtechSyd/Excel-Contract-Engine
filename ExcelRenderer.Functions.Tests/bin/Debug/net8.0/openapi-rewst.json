@@ -1,0 +1,617 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Excel Renderer (Rewst)",
+    "version": "2.1.0",
+    "description": "Rewst integration: validate and render Excel using payload_json (stringified inner contract). Use tier 1 routes when the inner JSON has a workbook root; use tier 2 routes when it has sources and sheets. The Function App must have RENDER_API_KEY set; send the same value as X-Api-Key (or Authorization: Bearer). Wrong or missing client credentials: 403. If RENDER_API_KEY is not configured on the server: 503. Strongly recommended: restrict inbound traffic to Rewst outbound IPs (see repository SETUP.md). Optional X-Correlation-Id for tracing logs. Examples are synthetic. No warranty or guaranteed support—see repository README. REWST_PAYLOAD_GUIDE.md, REWST_SUBWORKFLOW.md, ERROR_CODES.md."
+  },
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
+  "security": [
+    {
+      "ApiKeyAuth": []
+    }
+  ],
+  "paths": {
+    "/api/rewst/tier1/validate": {
+      "post": {
+        "summary": "Validate tier 1 contract (workbook root)",
+        "operationId": "rewstTier1ValidateContract",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RewstPayload"
+              },
+              "examples": {
+                "minimalTier1": {
+                  "summary": "Minimal tier 1 payload",
+                  "value": {
+                    "payload_json": "{\"schema_version\":\"1.0\",\"report_name\":\"Example report\",\"file_name\":\"example-report.xlsx\",\"workbook\":{\"author\":\"Report automation\",\"display_timezone\":\"UTC\",\"worksheets\":[{\"name\":\"Sheet1\",\"blocks\":[{\"type\":\"table\",\"start_cell\":\"A1\",\"columns\":[{\"key\":\"name\",\"header\":\"Name\",\"type\":\"string\"}],\"rows\":[{\"name\":\"Company A\"}]}]}]}}"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Validation result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid wrapper or contract",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing or invalid API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "RENDER_API_KEY is not configured on the Function App",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/rewst/tier1/render": {
+      "post": {
+        "summary": "Render tier 1 contract to Excel (JSON envelope only)",
+        "operationId": "rewstTier1RenderExcel",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RewstPayload"
+              },
+              "examples": {
+                "minimalTier1": {
+                  "summary": "Minimal tier 1 payload",
+                  "value": {
+                    "payload_json": "{\"schema_version\":\"1.0\",\"report_name\":\"Example report\",\"file_name\":\"example-report.xlsx\",\"response_mode\":\"base64_json\",\"workbook\":{\"author\":\"Report automation\",\"display_timezone\":\"UTC\",\"worksheets\":[{\"name\":\"Sheet1\",\"freeze_panes\":\"A2\",\"blocks\":[{\"type\":\"table\",\"start_cell\":\"A1\",\"columns\":[{\"key\":\"name\",\"header\":\"Name\",\"type\":\"string\"},{\"key\":\"status\",\"header\":\"Status\",\"type\":\"string\"}],\"rows\":[{\"name\":\"Company A\",\"status\":\"Active\"}]}]}]}}"
+                  }
+                },
+                "advancedTier1": {
+                  "summary": "Tier 1 with conditional formatting and row rules",
+                  "value": {
+                    "payload_json": "{\"schema_version\":\"1.0\",\"report_name\":\"Billing review\",\"file_name\":\"billing-review.xlsx\",\"response_mode\":\"base64_json\",\"table_theme\":\"TableStyleMedium2\",\"workbook\":{\"author\":\"Report automation\",\"display_timezone\":\"UTC\",\"worksheets\":[{\"name\":\"Exceptions\",\"freeze_panes\":\"A2\",\"blocks\":[{\"type\":\"table\",\"start_cell\":\"A1\",\"columns\":[{\"key\":\"client\",\"header\":\"Client\",\"type\":\"string\"},{\"key\":\"cost_aud\",\"header\":\"Cost AUD\",\"type\":\"currency\",\"currency_code\":\"AUD\"},{\"key\":\"flagged\",\"header\":\"Flagged\",\"type\":\"boolean\"}],\"rows\":[{\"client\":\"Company A\",\"cost_aud\":1400.25,\"flagged\":true},{\"client\":\"Company B\",\"cost_aud\":95.1,\"flagged\":false}],\"conditional_formats\":[{\"column_key\":\"cost_aud\",\"op\":\"greater_than\",\"value\":1000,\"fill_color\":\"#FFC7CE\"}],\"row_rules\":[{\"when\":{\"flagged\":true},\"style\":\"warning\"}]}]}]}}"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Rendered workbook as base64 JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RenderJsonResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or render failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing or invalid API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "RENDER_API_KEY is not configured on the Function App",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/rewst/tier2/validate": {
+      "post": {
+        "summary": "Validate tier 2 contract (sources + sheets)",
+        "operationId": "rewstTier2ValidateContract",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RewstPayload"
+              },
+              "examples": {
+                "minimalTier2": {
+                  "summary": "Minimal tier 2 payload",
+                  "value": {
+                    "payload_json": "{\"schema_version\":\"1.0\",\"file_name\":\"tier2-example.xlsx\",\"sources\":{\"customers\":{\"data\":[{\"name\":\"Company A\",\"status\":\"Active\"}]}},\"sheets\":[{\"name\":\"Customers\",\"primary_source\":\"customers\",\"columns\":{\"name\":{\"header\":\"Name\",\"type\":\"string\",\"source\":\"name\"},\"status\":{\"header\":\"Status\",\"type\":\"string\",\"source\":\"status\"}}}]}"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Validation result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid wrapper or contract",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing or invalid API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "RENDER_API_KEY is not configured on the Function App",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/rewst/tier2/render": {
+      "post": {
+        "summary": "Render tier 2 contract to Excel (JSON envelope only)",
+        "operationId": "rewstTier2RenderExcel",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RewstPayload"
+              },
+              "examples": {
+                "minimalTier2": {
+                  "summary": "Minimal tier 2 payload",
+                  "value": {
+                    "payload_json": "{\"schema_version\":\"1.0\",\"file_name\":\"tier2-example.xlsx\",\"sources\":{\"customers\":{\"data\":[{\"name\":\"Company A\",\"status\":\"Active\"}]}},\"sheets\":[{\"name\":\"Customers\",\"primary_source\":\"customers\",\"columns\":{\"name\":{\"header\":\"Name\",\"type\":\"string\",\"source\":\"name\"},\"status\":{\"header\":\"Status\",\"type\":\"string\",\"source\":\"status\"}}}],\"report_name\":\"Tier 2 example\",\"response_mode\":\"base64_json\"}"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Rendered workbook as base64 JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RenderJsonResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or render failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing or invalid API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "RENDER_API_KEY is not configured on the Function App",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/rewst/sharepoint/upload": {
+      "post": {
+        "summary": "Upload file bytes to SharePoint (Microsoft Graph, client credentials)",
+        "description": "Requires GRAPH_TENANT_ID, GRAPH_CLIENT_ID, GRAPH_CLIENT_SECRET and Entra app with Sites.Selected (or appropriate Graph permissions). Request body is direct upload fields only (no payload_json wrapper). Uses the site's default document library.",
+        "operationId": "rewstSharePointUpload",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SharePointUploadRequest"
+              },
+              "examples": {
+                "defaultUpload": {
+                  "summary": "SharePoint upload payload",
+                  "value": {
+                    "site_id": "platinumtechnology.sharepoint.com,9cf956ec-c740-457f-b0f0-ba987a275175,06a76b0d-db58-4c14-a94b-04dd3d5819a0",
+                    "folder_path": "Invoicing/Technology Usage Reporting/Azure/2026/04",
+                    "file_name": "Azure_Billing_April_2026.xlsx",
+                    "content_base64": "<base64 from render step>",
+                    "overwrite": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "File uploaded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SharePointUploadResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or Graph error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SharePointUploadError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing or invalid API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "RENDER_API_KEY is not configured on the Function App",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Api-Key",
+        "description": "Required. Set once on the Rewst HTTP integration to match Function App setting RENDER_API_KEY (not an action input). Alternatively Authorization: Bearer with the same value."
+      }
+    },
+    "parameters": {
+      "CorrelationId": {
+        "name": "X-Correlation-Id",
+        "in": "header",
+        "required": false,
+        "schema": {
+          "type": "string"
+        },
+        "description": "Optional tracking id for Azure Function logs and troubleshooting."
+      }
+    },
+    "schemas": {
+      "RewstPayload": {
+        "type": "object",
+        "required": [
+          "payload_json"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "payload_json": {
+            "type": "string",
+            "minLength": 2,
+            "description": "Stringified inner JSON. Tier 1 routes: root must contain workbook. Tier 2 routes: root must contain sources and sheets. Errors may reference payload_json, $, or a path into the inner JSON.",
+            "example": "{\"schema_version\":\"1.0\",\"report_name\":\"Example report\",\"file_name\":\"example-report.xlsx\",\"workbook\":{\"author\":\"Report automation\",\"display_timezone\":\"UTC\",\"worksheets\":[{\"name\":\"Sheet1\",\"blocks\":[{\"type\":\"table\",\"start_cell\":\"A1\",\"columns\":[{\"key\":\"name\",\"header\":\"Name\",\"type\":\"string\"}],\"rows\":[{\"name\":\"Company A\"}]}]}]}}"
+          }
+        }
+      },
+      "Issue": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string",
+            "description": "Location in the embedded JSON, the wrapper field payload_json, or $ for document-level issues."
+          }
+        }
+      },
+      "ValidationResponse": {
+        "type": "object",
+        "required": [
+          "valid",
+          "errors",
+          "warnings"
+        ],
+        "properties": {
+          "valid": {
+            "type": "boolean"
+          },
+          "response_mode": {
+            "type": "string",
+            "enum": [
+              "base64_json"
+            ]
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Issue"
+            }
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Issue"
+            }
+          }
+        }
+      },
+      "RenderStats": {
+        "type": "object",
+        "properties": {
+          "sheetCount": {
+            "type": "integer"
+          },
+          "blockCount": {
+            "type": "integer"
+          },
+          "rowCount": {
+            "type": "integer"
+          }
+        }
+      },
+      "RenderJsonResponse": {
+        "type": "object",
+        "required": [
+          "status",
+          "file_name",
+          "content_type",
+          "content_base64",
+          "response_mode",
+          "warnings",
+          "stats"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "ok"
+          },
+          "file_name": {
+            "type": "string"
+          },
+          "content_type": {
+            "type": "string",
+            "example": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+          },
+          "content_base64": {
+            "type": "string",
+            "format": "byte"
+          },
+          "response_mode": {
+            "type": "string",
+            "enum": [
+              "base64_json"
+            ]
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Issue"
+            }
+          },
+          "stats": {
+            "$ref": "#/components/schemas/RenderStats"
+          }
+        }
+      },
+      "ErrorEnvelope": {
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "SharePointUploadRequest": {
+        "type": "object",
+        "description": "Direct body for sharepoint/upload. Uses site_id and the site's default document library.",
+        "required": [
+          "site_id",
+          "folder_path",
+          "file_name",
+          "content_base64"
+        ],
+        "properties": {
+          "site_id": {
+            "type": "string",
+            "description": "Graph site id (hostname,siteCollectionId,siteId format)"
+          },
+          "folder_path": {
+            "type": "string",
+            "description": "Folder path under library root, use forward slashes"
+          },
+          "file_name": {
+            "type": "string"
+          },
+          "content_base64": {
+            "type": "string",
+            "format": "byte"
+          },
+          "content_type": {
+            "type": "string",
+            "example": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+          },
+          "overwrite": {
+            "type": "boolean",
+            "default": true
+          }
+        }
+      },
+      "SharePointUploadResponse": {
+        "type": "object",
+        "required": [
+          "status",
+          "web_url"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "ok"
+          },
+          "web_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "path": {
+            "type": "string",
+            "description": "Graph parentReference.path when available"
+          },
+          "item_id": {
+            "type": "string"
+          }
+        }
+      },
+      "SharePointUploadError": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "error"
+          },
+          "error_code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

@@ -114,6 +114,48 @@ public sealed class ExcelRenderService
 
         if (block.RowRules is { Count: > 0 })
             ApplyRowRules(ws, block, start, dataStartRow);
+
+        for (var c = 0; c < colCount; c++)
+        {
+            var colDef = block.Columns[c];
+            if (colDef.Width is { } w && w > 0)
+                continue;
+            AutosizeColumn(ws, start.col + c, colDef, headerRow, lastRow);
+        }
+    }
+
+    /// <summary>
+    /// ClosedXML's AdjustToContents often underestimates Excel's rendered width: formatted
+    /// numbers show ####### when too narrow; text + bold headers + table filter glyphs look clipped
+    /// (e.g. "Subscription") when the metric is short. We derive a floor from the longest formatted
+    /// string in the column, then add padding.
+    /// </summary>
+    private static void AutosizeColumn(IXLWorksheet ws, int col, ColumnPayload colDef, int headerRow, int lastRow)
+    {
+        var maxDisplayLen = colDef.Header.Length;
+        for (var r = headerRow; r <= lastRow; r++)
+        {
+            var formatted = ws.Cell(r, col).GetFormattedString(CultureInfo.InvariantCulture);
+            if (formatted.Length > maxDisplayLen)
+                maxDisplayLen = formatted.Length;
+        }
+
+        // ~Excel column width vs character count; +8 leaves room for AutoFilter dropdown on headers.
+        var floorWidth = Math.Clamp(maxDisplayLen * 1.12 + 8.0, 12.0, 120.0);
+
+        var column = ws.Column(col);
+        column.AdjustToContents(headerRow, lastRow);
+        var extra = FormattedValueColumn(colDef) ? 5.0 : 4.0;
+        column.Width = Math.Min(Math.Max(column.Width + extra, floorWidth), 255);
+    }
+
+    private static bool FormattedValueColumn(ColumnPayload colDef)
+    {
+        return colDef.Type.ToLowerInvariant() switch
+        {
+            "number" or "integer" or "currency" or "date" or "datetime" => true,
+            _ => false
+        };
     }
 
     private static void ApplyConditionalFormats(

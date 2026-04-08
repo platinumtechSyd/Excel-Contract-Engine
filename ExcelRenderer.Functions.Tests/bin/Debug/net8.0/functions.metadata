@@ -1,0 +1,272 @@
+[
+  {
+    "name": "RenderExcel",
+    "scriptFile": "ExcelRenderer.Functions.dll",
+    "entryPoint": "ExcelRenderer.Functions.Functions.RenderExcelFunction.RenderExcel",
+    "language": "dotnet-isolated",
+    "properties": {
+      "IsCodeless": false
+    },
+    "bindings": [
+      {
+        "name": "req",
+        "direction": "In",
+        "type": "httpTrigger",
+        "authLevel": "Anonymous",
+        "methods": [
+          "post"
+        ],
+        "route": "render",
+        "properties": {}
+      },
+      {
+        "name": "$return",
+        "type": "http",
+        "direction": "Out"
+      }
+    ]
+  },
+  {
+    "name": "Validate",
+    "scriptFile": "ExcelRenderer.Functions.dll",
+    "entryPoint": "ExcelRenderer.Functions.Functions.RenderExcelFunction.Validate",
+    "language": "dotnet-isolated",
+    "properties": {
+      "IsCodeless": false
+    },
+    "bindings": [
+      {
+        "name": "req",
+        "direction": "In",
+        "type": "httpTrigger",
+        "authLevel": "Anonymous",
+        "methods": [
+          "post"
+        ],
+        "route": "validate",
+        "properties": {}
+      },
+      {
+        "name": "$return",
+        "type": "http",
+        "direction": "Out"
+      }
+    ]
+  },
+  {
+    "name": "Health",
+    "scriptFile": "ExcelRenderer.Functions.dll",
+    "entryPoint": "ExcelRenderer.Functions.Functions.RenderExcelFunction.Health",
+    "language": "dotnet-isolated",
+    "properties": {
+      "IsCodeless": false
+    },
+    "bindings": [
+      {
+        "name": "req",
+        "direction": "In",
+        "type": "httpTrigger",
+        "authLevel": "Anonymous",
+        "methods": [
+          "get"
+        ],
+        "route": "health",
+        "properties": {}
+      },
+      {
+        "name": "$return",
+        "type": "http",
+        "direction": "Out"
+      }
+    ]
+  },
+  {
+    "name": "OpenApi",
+    "scriptFile": "ExcelRenderer.Functions.dll",
+    "entryPoint": "ExcelRenderer.Functions.Functions.RenderExcelFunction.OpenApi",
+    "language": "dotnet-isolated",
+    "properties": {
+      "IsCodeless": false
+    },
+    "bindings": [
+      {
+        "name": "req",
+        "direction": "In",
+        "type": "httpTrigger",
+        "authLevel": "Anonymous",
+        "methods": [
+          "get"
+        ],
+        "route": "openapi.json",
+        "properties": {}
+      },
+      {
+        "name": "$return",
+        "type": "http",
+        "direction": "Out"
+      }
+    ]
+  },
+  {
+    "name": "RewstTier1Validate",
+    "scriptFile": "ExcelRenderer.Functions.dll",
+    "entryPoint": "ExcelRenderer.Functions.Functions.RewstExcelFunction.RewstTier1Validate",
+    "language": "dotnet-isolated",
+    "properties": {
+      "IsCodeless": false
+    },
+    "bindings": [
+      {
+        "name": "req",
+        "direction": "In",
+        "type": "httpTrigger",
+        "authLevel": "Anonymous",
+        "methods": [
+          "post"
+        ],
+        "route": "rewst/tier1/validate",
+        "properties": {}
+      },
+      {
+        "name": "$return",
+        "type": "http",
+        "direction": "Out"
+      }
+    ]
+  },
+  {
+    "name": "RewstTier1Render",
+    "scriptFile": "ExcelRenderer.Functions.dll",
+    "entryPoint": "ExcelRenderer.Functions.Functions.RewstExcelFunction.RewstTier1Render",
+    "language": "dotnet-isolated",
+    "properties": {
+      "IsCodeless": false
+    },
+    "bindings": [
+      {
+        "name": "req",
+        "direction": "In",
+        "type": "httpTrigger",
+        "authLevel": "Anonymous",
+        "methods": [
+          "post"
+        ],
+        "route": "rewst/tier1/render",
+        "properties": {}
+      },
+      {
+        "name": "$return",
+        "type": "http",
+        "direction": "Out"
+      }
+    ]
+  },
+  {
+    "name": "RewstTier2Validate",
+    "scriptFile": "ExcelRenderer.Functions.dll",
+    "entryPoint": "ExcelRenderer.Functions.Functions.RewstExcelFunction.RewstTier2Validate",
+    "language": "dotnet-isolated",
+    "properties": {
+      "IsCodeless": false
+    },
+    "bindings": [
+      {
+        "name": "req",
+        "direction": "In",
+        "type": "httpTrigger",
+        "authLevel": "Anonymous",
+        "methods": [
+          "post"
+        ],
+        "route": "rewst/tier2/validate",
+        "properties": {}
+      },
+      {
+        "name": "$return",
+        "type": "http",
+        "direction": "Out"
+      }
+    ]
+  },
+  {
+    "name": "RewstTier2Render",
+    "scriptFile": "ExcelRenderer.Functions.dll",
+    "entryPoint": "ExcelRenderer.Functions.Functions.RewstExcelFunction.RewstTier2Render",
+    "language": "dotnet-isolated",
+    "properties": {
+      "IsCodeless": false
+    },
+    "bindings": [
+      {
+        "name": "req",
+        "direction": "In",
+        "type": "httpTrigger",
+        "authLevel": "Anonymous",
+        "methods": [
+          "post"
+        ],
+        "route": "rewst/tier2/render",
+        "properties": {}
+      },
+      {
+        "name": "$return",
+        "type": "http",
+        "direction": "Out"
+      }
+    ]
+  },
+  {
+    "name": "OpenApiRewst",
+    "scriptFile": "ExcelRenderer.Functions.dll",
+    "entryPoint": "ExcelRenderer.Functions.Functions.RewstExcelFunction.OpenApiRewst",
+    "language": "dotnet-isolated",
+    "properties": {
+      "IsCodeless": false
+    },
+    "bindings": [
+      {
+        "name": "req",
+        "direction": "In",
+        "type": "httpTrigger",
+        "authLevel": "Anonymous",
+        "methods": [
+          "get"
+        ],
+        "route": "openapi-rewst.json",
+        "properties": {}
+      },
+      {
+        "name": "$return",
+        "type": "http",
+        "direction": "Out"
+      }
+    ]
+  },
+  {
+    "name": "RewstSharePointUpload",
+    "scriptFile": "ExcelRenderer.Functions.dll",
+    "entryPoint": "ExcelRenderer.Functions.Functions.RewstSharePointUploadFunction.RewstSharePointUpload",
+    "language": "dotnet-isolated",
+    "properties": {
+      "IsCodeless": false
+    },
+    "bindings": [
+      {
+        "name": "req",
+        "direction": "In",
+        "type": "httpTrigger",
+        "authLevel": "Anonymous",
+        "methods": [
+          "post"
+        ],
+        "route": "rewst/sharepoint/upload",
+        "properties": {}
+      },
+      {
+        "name": "$return",
+        "type": "http",
+        "direction": "Out"
+      }
+    ]
+  }
+]

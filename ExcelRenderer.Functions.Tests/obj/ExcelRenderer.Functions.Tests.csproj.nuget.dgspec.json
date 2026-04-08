@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\benma\\New folder\\Excel-Contract-Engine\\ExcelRenderer.Functions.Tests\\ExcelRenderer.Functions.Tests.csproj": {}
+    "c:\\Users\\benma\\New folder\\Excel-Contract-Engine-1\\ExcelRenderer.Functions.Tests\\ExcelRenderer.Functions.Tests.csproj": {}
   },
   "projects": {
-    "C:\\Users\\benma\\New folder\\Excel-Contract-Engine\\ExcelRenderer.Functions.Tests\\ExcelRenderer.Functions.Tests.csproj": {
+    "c:\\Users\\benma\\New folder\\Excel-Contract-Engine-1\\ExcelRenderer.Functions.Tests\\ExcelRenderer.Functions.Tests.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\benma\\New folder\\Excel-Contract-Engine\\ExcelRenderer.Functions.Tests\\ExcelRenderer.Functions.Tests.csproj",
+        "projectUniqueName": "c:\\Users\\benma\\New folder\\Excel-Contract-Engine-1\\ExcelRenderer.Functions.Tests\\ExcelRenderer.Functions.Tests.csproj",
         "projectName": "ExcelRenderer.Functions.Tests",
-        "projectPath": "C:\\Users\\benma\\New folder\\Excel-Contract-Engine\\ExcelRenderer.Functions.Tests\\ExcelRenderer.Functions.Tests.csproj",
+        "projectPath": "c:\\Users\\benma\\New folder\\Excel-Contract-Engine-1\\ExcelRenderer.Functions.Tests\\ExcelRenderer.Functions.Tests.csproj",
         "packagesPath": "C:\\Users\\benma\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\benma\\New folder\\Excel-Contract-Engine\\ExcelRenderer.Functions.Tests\\obj\\",
+        "outputPath": "c:\\Users\\benma\\New folder\\Excel-Contract-Engine-1\\ExcelRenderer.Functions.Tests\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\benma\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -26,8 +26,8 @@
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
-              "C:\\Users\\benma\\New folder\\Excel-Contract-Engine\\ExcelRenderer.Functions\\ExcelRenderer.Functions.csproj": {
-                "projectPath": "C:\\Users\\benma\\New folder\\Excel-Contract-Engine\\ExcelRenderer.Functions\\ExcelRenderer.Functions.csproj"
+              "c:\\Users\\benma\\New folder\\Excel-Contract-Engine-1\\ExcelRenderer.Functions\\ExcelRenderer.Functions.csproj": {
+                "projectPath": "c:\\Users\\benma\\New folder\\Excel-Contract-Engine-1\\ExcelRenderer.Functions\\ExcelRenderer.Functions.csproj"
               }
             }
           }
@@ -97,14 +97,14 @@
         }
       }
     },
-    "C:\\Users\\benma\\New folder\\Excel-Contract-Engine\\ExcelRenderer.Functions\\ExcelRenderer.Functions.csproj": {
+    "c:\\Users\\benma\\New folder\\Excel-Contract-Engine-1\\ExcelRenderer.Functions\\ExcelRenderer.Functions.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\benma\\New folder\\Excel-Contract-Engine\\ExcelRenderer.Functions\\ExcelRenderer.Functions.csproj",
+        "projectUniqueName": "c:\\Users\\benma\\New folder\\Excel-Contract-Engine-1\\ExcelRenderer.Functions\\ExcelRenderer.Functions.csproj",
         "projectName": "ExcelRenderer.Functions",
-        "projectPath": "C:\\Users\\benma\\New folder\\Excel-Contract-Engine\\ExcelRenderer.Functions\\ExcelRenderer.Functions.csproj",
+        "projectPath": "c:\\Users\\benma\\New folder\\Excel-Contract-Engine-1\\ExcelRenderer.Functions\\ExcelRenderer.Functions.csproj",
         "packagesPath": "C:\\Users\\benma\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\benma\\New folder\\Excel-Contract-Engine\\ExcelRenderer.Functions\\obj\\",
+        "outputPath": "c:\\Users\\benma\\New folder\\Excel-Contract-Engine-1\\ExcelRenderer.Functions\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\benma\\AppData\\Roaming\\NuGet\\NuGet.Config"

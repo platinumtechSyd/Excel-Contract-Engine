@@ -68,10 +68,8 @@ JSON responses use **`status`**, **`error_code`**, and **`message`** (not the `e
 |------|---------|
 | `GRAPH_NOT_CONFIGURED` | Missing `GRAPH_TENANT_ID` / `GRAPH_CLIENT_ID` / `GRAPH_CLIENT_SECRET`. |
 | `GRAPH_AUTH_FAILED` | Token request to login.microsoftonline.com failed. |
-| `VALIDATION_ERROR` | Bad `payload_json` (missing exclusivity of site/drive fields, bad base64, etc.). |
+| `VALIDATION_ERROR` | Bad upload request body (missing `site_id`/`folder_path`/`file_name`/`content_base64`, invalid base64, etc.). |
 | `FILE_TOO_LARGE` | Decoded file exceeds **250 MB** (same cap as Microsoft Graph drive-item uploads). |
-| `SITE_NOT_FOUND` | Graph could not resolve `site_id` or `site_url`. |
-| `DRIVE_NOT_FOUND` | Could not match `library_name` or invalid `drive_id`. |
 | `GRAPH_UPLOAD_FAILED` | Graph returned an error (permissions, path, conflict, etc.). |
 | `GRAPH_HTTP_ERROR` | Network-level HTTP failure calling Graph. |
 

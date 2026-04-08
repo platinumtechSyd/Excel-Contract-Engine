@@ -309,7 +309,7 @@
     "/api/rewst/sharepoint/upload": {
       "post": {
         "summary": "Upload file bytes to SharePoint (Microsoft Graph, client credentials)",
-        "description": "Requires GRAPH_TENANT_ID, GRAPH_CLIENT_ID, GRAPH_CLIENT_SECRET and Entra app with Sites.Selected (or appropriate Graph permissions). Request body supports either direct upload fields (file_name, content_base64, site/drive settings) or the legacy payload_json wrapper.",
+        "description": "Requires GRAPH_TENANT_ID, GRAPH_CLIENT_ID, GRAPH_CLIENT_SECRET and Entra app with Sites.Selected (or appropriate Graph permissions). Request body is direct upload fields only (no payload_json wrapper). Uses the site's default document library.",
         "operationId": "rewstSharePointUpload",
         "parameters": [
           {
@@ -321,31 +321,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "oneOf": [
-                  {
-                    "$ref": "#/components/schemas/SharePointUploadInner"
-                  },
-                  {
-                    "$ref": "#/components/schemas/SharePointUploadWrapped"
-                  }
-                ]
+                "$ref": "#/components/schemas/SharePointUploadRequest"
               },
               "examples": {
-                "direct": {
-                  "summary": "Direct upload payload (recommended)",
+                "defaultUpload": {
+                  "summary": "SharePoint upload payload",
                   "value": {
-                    "site_url": "https://contoso.sharepoint.com/sites/ExampleSite",
-                    "library_name": "Documents",
-                    "folder_path": "Automation/Exports",
-                    "file_name": "report.xlsx",
+                    "site_id": "platinumtechnology.sharepoint.com,9cf956ec-c740-457f-b0f0-ba987a275175,06a76b0d-db58-4c14-a94b-04dd3d5819a0",
+                    "folder_path": "Invoicing/Technology Usage Reporting/Azure/2026/04",
+                    "file_name": "Azure_Billing_April_2026.xlsx",
                     "content_base64": "<base64 from render step>",
                     "overwrite": true
-                  }
-                },
-                "legacyWrapped": {
-                  "summary": "Legacy payload_json wrapper (supported)",
-                  "value": {
-                    "payload_json": "{\"site_url\":\"https://contoso.sharepoint.com/sites/ExampleSite\",\"library_name\":\"Documents\",\"folder_path\":\"Automation/Exports\",\"file_name\":\"report.xlsx\",\"content_base64\":\"<base64 from render step>\",\"overwrite\":true}"
                   }
                 }
               }
@@ -552,30 +538,19 @@
           }
         }
       },
-      "SharePointUploadInner": {
+      "SharePointUploadRequest": {
         "type": "object",
-        "description": "Direct body for sharepoint/upload. Provide exactly one of site_id or site_url; exactly one of drive_id or library_name.",
+        "description": "Direct body for sharepoint/upload. Uses site_id and the site's default document library.",
         "required": [
+          "site_id",
+          "folder_path",
           "file_name",
           "content_base64"
         ],
         "properties": {
           "site_id": {
             "type": "string",
-            "description": "Graph site id (if site_url not used)"
-          },
-          "site_url": {
-            "type": "string",
-            "format": "uri",
-            "description": "Full SharePoint site URL (if site_id not used)"
-          },
-          "drive_id": {
-            "type": "string",
-            "description": "Drive id (if library_name not used)"
-          },
-          "library_name": {
-            "type": "string",
-            "description": "Document library display name (if drive_id not used)"
+            "description": "Graph site id (hostname,siteCollectionId,siteId format)"
           },
           "folder_path": {
             "type": "string",
@@ -595,22 +570,6 @@
           "overwrite": {
             "type": "boolean",
             "default": true
-          }
-        }
-      },
-      "SharePointUploadWrapped": {
-        "type": "object",
-        "required": [
-          "payload_json"
-        ],
-        "additionalProperties": false,
-        "description": "Legacy wrapper for sharepoint/upload. payload_json must contain stringified SharePointUploadInner JSON.",
-        "properties": {
-          "payload_json": {
-            "type": "string",
-            "minLength": 2,
-            "description": "Stringified SharePointUploadInner JSON.",
-            "example": "{\"site_url\":\"https://contoso.sharepoint.com/sites/ExampleSite\",\"library_name\":\"Documents\",\"folder_path\":\"Automation/Exports\",\"file_name\":\"report.xlsx\",\"content_base64\":\"<base64 from render step>\",\"overwrite\":true}"
           }
         }
       },

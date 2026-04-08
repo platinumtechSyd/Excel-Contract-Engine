@@ -2,20 +2,11 @@ using System.Text.Json.Serialization;
 
 namespace ExcelRenderer.Functions.Models;
 
-/// <summary>Inner JSON for SharePoint upload (inside Rewst <c>payload_json</c> string).</summary>
-public sealed class SharePointUploadPayload
+/// <summary>Direct request body for SharePoint upload.</summary>
+public sealed class SharePointUploadRequest
 {
     [JsonPropertyName("site_id")]
     public string? SiteId { get; init; }
-
-    [JsonPropertyName("site_url")]
-    public string? SiteUrl { get; init; }
-
-    [JsonPropertyName("drive_id")]
-    public string? DriveId { get; init; }
-
-    [JsonPropertyName("library_name")]
-    public string? LibraryName { get; init; }
 
     [JsonPropertyName("folder_path")]
     public string? FolderPath { get; init; }

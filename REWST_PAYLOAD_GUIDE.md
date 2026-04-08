@@ -1,6 +1,6 @@
 # Rewst payload guide
 
-This project’s **Rewst** integration (from **`/api/openapi-rewst.json`**) exposes **five** POST actions: tier 1 vs tier 2 × validate vs render, plus **SharePoint upload**. Validate/render actions use **`payload_json`** (stringified contract JSON). SharePoint upload accepts either **direct JSON fields** (`file_name`, `content_base64`, site/drive settings) or the legacy **`payload_json`** wrapper.
+This project’s **Rewst** integration (from **`/api/openapi-rewst.json`**) exposes **five** POST actions: tier 1 vs tier 2 × validate vs render, plus **SharePoint upload**. Validate/render actions use **`payload_json`** (stringified contract JSON). SharePoint upload uses **direct JSON fields only** (no wrapper).
 
 **Operators:** Fork, deploy your own instance, and supply your own API key—see [README — Fork, deploy, and API keys](./README.md#fork-deploy-and-api-keys-operators) and **[SETUP.md](./SETUP.md)** (Azure). As-is; no guaranteed support.
 
@@ -12,7 +12,7 @@ This project’s **Rewst** integration (from **`/api/openapi-rewst.json`**) expo
 | Render tier 1 | `POST` | `/api/rewst/tier1/render` |
 | Validate tier 2 (inner JSON has `sheets`) | `POST` | `/api/rewst/tier2/validate` |
 | Render tier 2 | `POST` | `/api/rewst/tier2/render` |
-| Upload file to SharePoint (Graph; inner JSON is upload payload, not a workbook) | `POST` | `/api/rewst/sharepoint/upload` |
+| Upload file to SharePoint (Graph; direct JSON upload fields) | `POST` | `/api/rewst/sharepoint/upload` |
 | Rewst OpenAPI spec | `GET` | `/api/openapi-rewst.json` |
 
 Import **`/api/openapi-rewst.json`** into Rewst. Configure **API key** on the HTTP integration (`X-Api-Key`); it must not appear as a per-action input. Optional **`X-Correlation-Id`** (or integration-level headers) helps trace requests in logs—see [REWST_SUBWORKFLOW.md](./REWST_SUBWORKFLOW.md).
@@ -31,19 +31,13 @@ Build `payload_json` by serializing your contract object to a string (escape quo
 
 ## SharePoint upload (optional)
 
-**Route:** `POST /api/rewst/sharepoint/upload` — accepts either:
-
-- **Direct body (recommended):** upload fields as normal JSON keys.
-- **Legacy wrapper (still supported):** `{ "payload_json": "<stringified upload JSON>" }`.
-
-This payload is **not** a workbook contract. It targets a library path and supplies file bytes. Configure **`GRAPH_*`** on the Function App and Entra per **[ENTRA_GRAPH_SETUP.md](./ENTRA_GRAPH_SETUP.md)**.
+**Route:** `POST /api/rewst/sharepoint/upload` — **direct body only**. This payload is **not** a workbook contract. It targets a library path and supplies file bytes. Configure **`GRAPH_*`** on the Function App and Entra per **[ENTRA_GRAPH_SETUP.md](./ENTRA_GRAPH_SETUP.md)**.
 
 | Field | Required | Notes |
 |-------|----------|--------|
 | `file_name` | Yes | Target filename in the library. |
 | `content_base64` | Yes | File bytes (e.g. from a prior **`/api/rewst/tier1/render`** response’s `content_base64`). |
-| `site_id` or `site_url` | One of | How Graph resolves the site. |
-| `drive_id` or `library_name` | One of | Document library / drive. |
+| `site_id` | Yes | Graph site id (`hostname,siteCollectionId,siteId`). |
 | `folder_path` | Typical | Path under the library root; **folders must already exist** (see [SETUP.md](./SETUP.md)). |
 | `content_type` | No | e.g. MIME type for the upload. |
 | `overwrite` | No | Default `true`. |
@@ -52,20 +46,11 @@ This payload is **not** a workbook contract. It targets a library path and suppl
 
 ```json
 {
-  "site_url": "https://contoso.sharepoint.com/sites/ExampleSite",
-  "library_name": "Documents",
-  "folder_path": "Automation/Exports",
-  "file_name": "report.xlsx",
+  "site_id": "platinumtechnology.sharepoint.com,9cf956ec-c740-457f-b0f0-ba987a275175,06a76b0d-db58-4c14-a94b-04dd3d5819a0",
+  "folder_path": "Invoicing/Technology Usage Reporting/Azure/2026/04",
+  "file_name": "Azure_Billing_April_2026.xlsx",
   "content_base64": "<base64 from render step>",
   "overwrite": true
-}
-```
-
-**Legacy wrapper example** (equivalent):
-
-```json
-{
-  "payload_json": "{\"site_url\":\"https://contoso.sharepoint.com/sites/ExampleSite\",\"library_name\":\"Documents\",\"folder_path\":\"Automation/Exports\",\"file_name\":\"report.xlsx\",\"content_base64\":\"<base64 from render step>\",\"overwrite\":true}"
 }
 ```
 

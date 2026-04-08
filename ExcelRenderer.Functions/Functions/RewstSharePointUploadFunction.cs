@@ -57,11 +57,23 @@ public sealed class RewstSharePointUploadFunction
         if (string.IsNullOrWhiteSpace(raw))
             return await Json(req, HttpStatusCode.BadRequest, new { valid = false, error = "Request body is empty." });
 
-        var parsed = TryParseUploadPayload(raw);
-        if (!parsed.ok)
-            return await Json(req, HttpStatusCode.BadRequest, new { valid = false, error = parsed.error });
+        SharePointUploadRequest? payload;
+        try
+        {
+            payload = JsonSerializer.Deserialize<SharePointUploadRequest>(raw, DeserializeOpts);
+        }
+        catch (Exception ex)
+        {
+            return await Json(req, HttpStatusCode.BadRequest, new { valid = false, error = "Request JSON is invalid: " + ex.Message });
+        }
 
-        var result = await _upload.UploadAsync(parsed.payload!, default);
+        if (payload is null)
+            return await Json(req, HttpStatusCode.BadRequest, new { valid = false, error = "Request JSON deserialized to null." });
+
+        if (HasPayloadJsonField(raw))
+            return await Json(req, HttpStatusCode.BadRequest, new { valid = false, error = "payload_json is not supported on this endpoint. Send direct upload fields." });
+
+        var result = await _upload.UploadAsync(payload, default);
         if (!result.Ok)
         {
             return await Json(req, HttpStatusCode.BadRequest, new
@@ -95,54 +107,17 @@ public sealed class RewstSharePointUploadFunction
         return null;
     }
 
-    private static (bool ok, SharePointUploadPayload? payload, string? error) TryParseUploadPayload(string raw)
+    private static bool HasPayloadJsonField(string raw)
     {
-        JsonDocument doc;
         try
         {
-            doc = JsonDocument.Parse(raw);
+            using var doc = JsonDocument.Parse(raw);
+            return doc.RootElement.ValueKind == JsonValueKind.Object &&
+                   doc.RootElement.TryGetProperty("payload_json", out _);
         }
-        catch (Exception ex)
+        catch
         {
-            return (false, null, "Request JSON is invalid: " + ex.Message);
-        }
-
-        using (doc)
-        {
-            var root = doc.RootElement;
-            if (root.ValueKind != JsonValueKind.Object)
-                return (false, null, "Request body must be a JSON object.");
-
-            if (root.TryGetProperty("payload_json", out var payloadJsonElement))
-            {
-                var payloadJson = payloadJsonElement.GetString();
-                if (string.IsNullOrWhiteSpace(payloadJson))
-                    return (false, null, "Field payload_json is present but empty.");
-
-                try
-                {
-                    var inner = JsonSerializer.Deserialize<SharePointUploadPayload>(payloadJson.Trim(), DeserializeOpts);
-                    return inner is null
-                        ? (false, null, "payload_json deserialized to null.")
-                        : (true, inner, null);
-                }
-                catch (Exception ex)
-                {
-                    return (false, null, "payload_json is not valid JSON: " + ex.Message);
-                }
-            }
-
-            try
-            {
-                var direct = JsonSerializer.Deserialize<SharePointUploadPayload>(raw, DeserializeOpts);
-                return direct is null
-                    ? (false, null, "Upload JSON deserialized to null.")
-                    : (true, direct, null);
-            }
-            catch (Exception ex)
-            {
-                return (false, null, "Upload JSON is invalid: " + ex.Message);
-            }
+            return false;
         }
     }
 

@@ -26,7 +26,7 @@ public sealed class GraphSharePointUploadService
         _logger = logger;
     }
 
-    public async Task<SharePointUploadResult> UploadAsync(SharePointUploadPayload payload, CancellationToken cancellationToken)
+    public async Task<SharePointUploadResult> UploadAsync(SharePointUploadRequest payload, CancellationToken cancellationToken)
     {
         var tenantId = _config["GRAPH_TENANT_ID"];
         var clientId = _config["GRAPH_CLIENT_ID"];
@@ -39,29 +39,17 @@ public sealed class GraphSharePointUploadService
                 "Set GRAPH_TENANT_ID, GRAPH_CLIENT_ID, and GRAPH_CLIENT_SECRET app settings.");
         }
 
+        if (string.IsNullOrWhiteSpace(payload.SiteId))
+            return SharePointUploadResult.Fail("VALIDATION_ERROR", "site_id is required.");
+
+        if (string.IsNullOrWhiteSpace(payload.FolderPath))
+            return SharePointUploadResult.Fail("VALIDATION_ERROR", "folder_path is required.");
+
         if (string.IsNullOrWhiteSpace(payload.FileName))
             return SharePointUploadResult.Fail("VALIDATION_ERROR", "file_name is required.");
 
         if (string.IsNullOrWhiteSpace(payload.ContentBase64))
             return SharePointUploadResult.Fail("VALIDATION_ERROR", "content_base64 is required.");
-
-        var hasSiteId = !string.IsNullOrWhiteSpace(payload.SiteId);
-        var hasSiteUrl = !string.IsNullOrWhiteSpace(payload.SiteUrl);
-        if (hasSiteId == hasSiteUrl)
-        {
-            return SharePointUploadResult.Fail(
-                "VALIDATION_ERROR",
-                "Provide exactly one of site_id or site_url.");
-        }
-
-        var hasDriveId = !string.IsNullOrWhiteSpace(payload.DriveId);
-        var hasLibrary = !string.IsNullOrWhiteSpace(payload.LibraryName);
-        if (hasDriveId == hasLibrary)
-        {
-            return SharePointUploadResult.Fail(
-                "VALIDATION_ERROR",
-                "Provide exactly one of drive_id or library_name.");
-        }
 
         byte[] bytes;
         try
@@ -89,20 +77,12 @@ public sealed class GraphSharePointUploadService
 
         try
         {
-            var siteId = await ResolveSiteIdAsync(token, payload, cancellationToken);
-            if (siteId is null)
-                return SharePointUploadResult.Fail("SITE_NOT_FOUND", "Could not resolve SharePoint site.");
-
-            var driveId = await ResolveDriveIdAsync(token, siteId, payload, cancellationToken);
-            if (driveId is null)
-                return SharePointUploadResult.Fail("DRIVE_NOT_FOUND", "Could not resolve document library / drive.");
-
             var relativePath = BuildRelativePath(payload.FolderPath, payload.FileName!);
             var contentType = string.IsNullOrWhiteSpace(payload.ContentType)
                 ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 : payload.ContentType.Trim();
 
-            return await PutContentAsync(token, driveId, relativePath, bytes, contentType, payload.Overwrite, cancellationToken);
+            return await PutContentAsync(token, payload.SiteId!.Trim(), relativePath, bytes, contentType, payload.Overwrite, cancellationToken);
         }
         catch (HttpRequestException ex)
         {
@@ -139,84 +119,6 @@ public sealed class GraphSharePointUploadService
         return doc.RootElement.GetProperty("access_token").GetString();
     }
 
-    private async Task<string?> ResolveSiteIdAsync(string token, SharePointUploadPayload payload, CancellationToken cancellationToken)
-    {
-        if (!string.IsNullOrWhiteSpace(payload.SiteId))
-        {
-            var id = payload.SiteId.Trim();
-            var url = $"https://graph.microsoft.com/v1.0/sites/{Uri.EscapeDataString(id)}";
-            using var request = new HttpRequestMessage(HttpMethod.Get, url);
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            using var response = await _http.SendAsync(request, cancellationToken);
-            var body = await response.Content.ReadAsStringAsync(cancellationToken);
-            if (!response.IsSuccessStatusCode)
-            {
-                _logger.LogWarning("Resolve site by id failed: {Status} {Body}", response.StatusCode, body);
-                return null;
-            }
-
-            using var doc = JsonDocument.Parse(body);
-            return doc.RootElement.GetProperty("id").GetString();
-        }
-
-        var siteUrl = payload.SiteUrl!.Trim();
-        if (!Uri.TryCreate(siteUrl, UriKind.Absolute, out var uri) || (uri.Scheme != "https" && uri.Scheme != "http"))
-            return null;
-
-        var host = uri.Host;
-        var path = uri.AbsolutePath.TrimEnd('/');
-        if (string.IsNullOrEmpty(path))
-            path = "/";
-
-        var sitePath = $"{host}:{path}";
-        var requestUrl = $"https://graph.microsoft.com/v1.0/sites/{Uri.EscapeDataString(sitePath)}";
-        using var req = new HttpRequestMessage(HttpMethod.Get, requestUrl);
-        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        using var r = await _http.SendAsync(req, cancellationToken);
-        var b = await r.Content.ReadAsStringAsync(cancellationToken);
-        if (!r.IsSuccessStatusCode)
-        {
-            _logger.LogWarning("Resolve site by URL failed: {Status} {Body}", r.StatusCode, b);
-            return null;
-        }
-
-        using var d = JsonDocument.Parse(b);
-        return d.RootElement.GetProperty("id").GetString();
-    }
-
-    private async Task<string?> ResolveDriveIdAsync(string token, string siteId, SharePointUploadPayload payload, CancellationToken cancellationToken)
-    {
-        if (!string.IsNullOrWhiteSpace(payload.DriveId))
-            return payload.DriveId.Trim();
-
-        var url = $"https://graph.microsoft.com/v1.0/sites/{Uri.EscapeDataString(siteId)}/drives";
-        using var request = new HttpRequestMessage(HttpMethod.Get, url);
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        using var response = await _http.SendAsync(request, cancellationToken);
-        var body = await response.Content.ReadAsStringAsync(cancellationToken);
-        if (!response.IsSuccessStatusCode)
-        {
-            _logger.LogWarning("List drives failed: {Status} {Body}", response.StatusCode, body);
-            return null;
-        }
-
-        using var doc = JsonDocument.Parse(body);
-        if (!doc.RootElement.TryGetProperty("value", out var drives))
-            return null;
-
-        var target = payload.LibraryName!.Trim();
-        foreach (var drive in drives.EnumerateArray())
-        {
-            if (!drive.TryGetProperty("name", out var nameEl))
-                continue;
-            var name = nameEl.GetString();
-            if (string.Equals(name, target, StringComparison.OrdinalIgnoreCase))
-                return drive.GetProperty("id").GetString();
-        }
-
-        return null;
-    }
-
     private static string BuildRelativePath(string? folderPath, string fileName)
     {
         var folder = (folderPath ?? "").Trim().Replace('\\', '/').Trim('/');
@@ -226,10 +128,10 @@ public sealed class GraphSharePointUploadService
         return $"{folder}/{name}";
     }
 
-    /// <summary>PUT /drives/{id}/root:/{path}:/content — Graph supports up to 250 MB per request.</summary>
+    /// <summary>PUT /sites/{site_id}/drive/root:/{path}:/content — Graph supports up to 250 MB per request.</summary>
     private async Task<SharePointUploadResult> PutContentAsync(
         string token,
-        string driveId,
+        string siteId,
         string relativePath,
         byte[] bytes,
         string contentType,
@@ -238,7 +140,7 @@ public sealed class GraphSharePointUploadService
     {
         var encodedPath = EncodeGraphDrivePath(relativePath);
         var q = overwrite ? "?@microsoft.graph.conflictBehavior=replace" : "";
-        var url = $"https://graph.microsoft.com/v1.0/drives/{Uri.EscapeDataString(driveId)}/root:/{encodedPath}:/content{q}";
+        var url = $"https://graph.microsoft.com/v1.0/sites/{Uri.EscapeDataString(siteId)}/drive/root:/{encodedPath}:/content{q}";
 
         using var request = new HttpRequestMessage(HttpMethod.Put, url);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);

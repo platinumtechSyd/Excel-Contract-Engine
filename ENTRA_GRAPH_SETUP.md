@@ -67,7 +67,7 @@ Microsoft documents the **site permissions** API, e.g. [Create permission — si
 
 You need:
 
-- **`{site-id}`** — Graph site id (same idea as **`site_id`** in the upload payload, or resolve from **`site_url`** via Graph).  
+- **`{site-id}`** — Graph site id (same value used as **`site_id`** in the upload payload).  
 - The **service principal object id** for your app registration (**Enterprise applications** → your app → **Object ID**), used in the permission payload per Microsoft’s schema.
 
 Exact JSON varies with API version; follow the **Create permission** article above and your tenant’s Graph Explorer tests.
@@ -91,7 +91,7 @@ Redeploy or restart the Function App after changing settings.
 ## 7. Verify
 
 - **Token:** Client credentials against `https://graph.microsoft.com/.default` should succeed (Entra token endpoint).  
-- **Upload:** Call **`POST /api/rewst/sharepoint/upload`** with header **`X-Api-Key`** (same value as **`RENDER_API_KEY`** on the Function App). Body uses the Rewst wrapper: **`payload_json`** string whose inner JSON includes a small test file as **`content_base64`**, plus valid **`site_id`** or **`site_url`**, **`drive_id`** or **`library_name`**, and a **`folder_path`** that already exists in the library.
+- **Upload:** Call **`POST /api/rewst/sharepoint/upload`** with header **`X-Api-Key`** (same value as **`RENDER_API_KEY`** on the Function App). Body is **direct JSON** with `site_id`, `folder_path`, `file_name`, and `content_base64` (plus optional `overwrite` / `content_type`).
 
 If Graph returns **403**, re-check: admin consent, Sites.Selected **site** grant, correct drive/library, and that the folder path already exists in the library.
 

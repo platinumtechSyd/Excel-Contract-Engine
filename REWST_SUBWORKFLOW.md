@@ -27,7 +27,7 @@ Body for validate/render (all four tier routes) uses the same wrapper:
 4. If `valid` is **false**: handle `errors` (and optionally `warnings`); use `path` and [ERROR_CODES.md](./ERROR_CODES.md); do not call render.
 5. If `valid` is **true**: **call render** with the **same** `payload_json` (and same tier).
 6. **Decode** `content_base64` from the render response when you need the `.xlsx` file.
-7. **Optional — SharePoint:** call **`POST /api/rewst/sharepoint/upload`** with a new `payload_json` containing `content_base64`, `file_name`, `folder_path`, site/drive resolution, plus Graph app settings on the Function App (see [SETUP.md](./SETUP.md)).
+7. **Optional — SharePoint:** call **`POST /api/rewst/sharepoint/upload`** with either a **direct JSON body** (`content_base64`, `file_name`, `folder_path`, site/drive resolution) or the legacy `payload_json` wrapper, plus Graph app settings on the Function App (see [SETUP.md](./SETUP.md)).
 
 ## Correlation id (optional)
 
@@ -50,7 +50,7 @@ The same document lives in the repo as **`ExcelRenderer.Functions/openapi-rewst.
 - **Never embed** `RENDER_API_KEY`, subscription IDs, tenant names, or internal hostnames in the OpenAPI file or descriptions.
 - **Prefer** publishing **`/api/openapi-rewst.json`** from your Function App so partners import a URL; they never need your repo.
 - If you **customize** `info.description`, keep it free of environment-specific URLs (you already dropped Azure portal links—that’s good).
-- Schema **`minLength: 2`** on `payload_json` rejects a zero- or one-character string only; real payloads are always longer.
+- Schema **`minLength: 2`** on `payload_json` rejects a zero- or one-character string only; real payloads are always longer. (This applies to validate/render and legacy wrapped upload.)
 
 ## Docs
 

@@ -309,7 +309,7 @@
     "/api/rewst/sharepoint/upload": {
       "post": {
         "summary": "Upload file bytes to SharePoint (Microsoft Graph, client credentials)",
-        "description": "Requires GRAPH_TENANT_ID, GRAPH_CLIENT_ID, GRAPH_CLIENT_SECRET and Entra app with Sites.Selected (or appropriate Graph permissions). Inner JSON is stringified in payload_json.",
+        "description": "Requires GRAPH_TENANT_ID, GRAPH_CLIENT_ID, GRAPH_CLIENT_SECRET and Entra app with Sites.Selected (or appropriate Graph permissions). Request body supports either direct upload fields (file_name, content_base64, site/drive settings) or the legacy payload_json wrapper.",
         "operationId": "rewstSharePointUpload",
         "parameters": [
           {
@@ -321,7 +321,33 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/RewstPayload"
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/SharePointUploadInner"
+                  },
+                  {
+                    "$ref": "#/components/schemas/SharePointUploadWrapped"
+                  }
+                ]
+              },
+              "examples": {
+                "direct": {
+                  "summary": "Direct upload payload (recommended)",
+                  "value": {
+                    "site_url": "https://contoso.sharepoint.com/sites/ExampleSite",
+                    "library_name": "Documents",
+                    "folder_path": "Automation/Exports",
+                    "file_name": "report.xlsx",
+                    "content_base64": "<base64 from render step>",
+                    "overwrite": true
+                  }
+                },
+                "legacyWrapped": {
+                  "summary": "Legacy payload_json wrapper (supported)",
+                  "value": {
+                    "payload_json": "{\"site_url\":\"https://contoso.sharepoint.com/sites/ExampleSite\",\"library_name\":\"Documents\",\"folder_path\":\"Automation/Exports\",\"file_name\":\"report.xlsx\",\"content_base64\":\"<base64 from render step>\",\"overwrite\":true}"
+                  }
+                }
               }
             }
           }
@@ -528,7 +554,7 @@
       },
       "SharePointUploadInner": {
         "type": "object",
-        "description": "Content of payload_json for sharepoint/upload. Provide exactly one of site_id or site_url; exactly one of drive_id or library_name.",
+        "description": "Direct body for sharepoint/upload. Provide exactly one of site_id or site_url; exactly one of drive_id or library_name.",
         "required": [
           "file_name",
           "content_base64"
@@ -569,6 +595,22 @@
           "overwrite": {
             "type": "boolean",
             "default": true
+          }
+        }
+      },
+      "SharePointUploadWrapped": {
+        "type": "object",
+        "required": [
+          "payload_json"
+        ],
+        "additionalProperties": false,
+        "description": "Legacy wrapper for sharepoint/upload. payload_json must contain stringified SharePointUploadInner JSON.",
+        "properties": {
+          "payload_json": {
+            "type": "string",
+            "minLength": 2,
+            "description": "Stringified SharePointUploadInner JSON.",
+            "example": "{\"site_url\":\"https://contoso.sharepoint.com/sites/ExampleSite\",\"library_name\":\"Documents\",\"folder_path\":\"Automation/Exports\",\"file_name\":\"report.xlsx\",\"content_base64\":\"<base64 from render step>\",\"overwrite\":true}"
           }
         }
       },

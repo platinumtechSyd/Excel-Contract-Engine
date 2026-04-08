@@ -131,7 +131,7 @@ Example success response:
 
 ## Required app settings
 
-- `FUNCTIONS_WORKER_RUNTIME=dotnet-isolated`
+- `FUNCTIONS_WORKER_RUNTIME=dotnet-isolated` (runtime mode). **Flex Consumption:** platform may manage this setting; if manual value conflicts, follow the guidance in [SETUP.md](./SETUP.md).
 - `RENDER_API_KEY` — **required** (non-empty). Clients must send **`X-Api-Key`** or **`Authorization: Bearer`** with the same value. If the app setting is **missing or empty**, protected routes return **503** (misconfiguration). For **local** runs, set it in **`local.settings.json`** (see **`ExcelRenderer.Functions/local.settings.json.example`**) or user secrets; never commit real keys. Prefer **Key Vault** references in Azure: [SETUP.md](./SETUP.md).
 - `DEFAULT_TABLE_THEME` (optional, default `TableStyleMedium2`)
 - `MAX_REQUEST_BYTES` (default 5000000)

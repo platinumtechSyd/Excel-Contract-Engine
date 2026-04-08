@@ -1,6 +1,6 @@
 # Rewst payload guide
 
-This project’s **Rewst** integration (from **`/api/openapi-rewst.json`**) exposes **five** POST actions: tier 1 vs tier 2 × validate vs render, plus **SharePoint upload**. Each action has a single body field, **`payload_json`**: a **string**. For validate/render, that string holds the **Excel contract** JSON (workbook layout, column types, conditional formatting, row rules, table themes). For SharePoint upload, it holds **upload parameters** (see [SharePoint upload](#sharepoint-upload-optional)). Those details live **inside** the string—not in the OpenAPI schema—so Rewst stays simple while the API stays capable.
+This project’s **Rewst** integration (from **`/api/openapi-rewst.json`**) exposes **five** POST actions: tier 1 vs tier 2 × validate vs render, plus **SharePoint upload**. Validate/render actions use **`payload_json`** (stringified contract JSON). SharePoint upload accepts either **direct JSON fields** (`file_name`, `content_base64`, site/drive settings) or the legacy **`payload_json`** wrapper.
 
 **Operators:** Fork, deploy your own instance, and supply your own API key—see [README — Fork, deploy, and API keys](./README.md#fork-deploy-and-api-keys-operators) and **[SETUP.md](./SETUP.md)** (Azure). As-is; no guaranteed support.
 
@@ -31,7 +31,12 @@ Build `payload_json` by serializing your contract object to a string (escape quo
 
 ## SharePoint upload (optional)
 
-**Route:** `POST /api/rewst/sharepoint/upload` — same Rewst wrapper **`{ "payload_json": "<string>" }`**, but the inner JSON is **not** a workbook contract. It targets a library path and supplies file bytes. Configure **`GRAPH_*`** on the Function App and Entra per **[ENTRA_GRAPH_SETUP.md](./ENTRA_GRAPH_SETUP.md)**.
+**Route:** `POST /api/rewst/sharepoint/upload` — accepts either:
+
+- **Direct body (recommended):** upload fields as normal JSON keys.
+- **Legacy wrapper (still supported):** `{ "payload_json": "<stringified upload JSON>" }`.
+
+This payload is **not** a workbook contract. It targets a library path and supplies file bytes. Configure **`GRAPH_*`** on the Function App and Entra per **[ENTRA_GRAPH_SETUP.md](./ENTRA_GRAPH_SETUP.md)**.
 
 | Field | Required | Notes |
 |-------|----------|--------|
@@ -43,7 +48,7 @@ Build `payload_json` by serializing your contract object to a string (escape quo
 | `content_type` | No | e.g. MIME type for the upload. |
 | `overwrite` | No | Default `true`. |
 
-**Example** — inner JSON (then stringified into `payload_json`):
+**Example (direct body; recommended):**
 
 ```json
 {
@@ -53,6 +58,14 @@ Build `payload_json` by serializing your contract object to a string (escape quo
   "file_name": "report.xlsx",
   "content_base64": "<base64 from render step>",
   "overwrite": true
+}
+```
+
+**Legacy wrapper example** (equivalent):
+
+```json
+{
+  "payload_json": "{\"site_url\":\"https://contoso.sharepoint.com/sites/ExampleSite\",\"library_name\":\"Documents\",\"folder_path\":\"Automation/Exports\",\"file_name\":\"report.xlsx\",\"content_base64\":\"<base64 from render step>\",\"overwrite\":true}"
 }
 ```
 

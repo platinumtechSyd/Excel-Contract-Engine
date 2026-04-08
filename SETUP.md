@@ -127,7 +127,7 @@ Secrets in Key Vault are easiest when the Function App has a **managed identity*
 | Name | Typical value | Notes |
 |------|----------------|--------|
 | `FUNCTIONS_EXTENSION_VERSION` | `~4` | Usually set by default. |
-| `FUNCTIONS_WORKER_RUNTIME` | `dotnet-isolated` | Required. |
+| `FUNCTIONS_WORKER_RUNTIME` | `dotnet-isolated` | Required runtime mode. **Flex Consumption:** platform may manage this; follow portal guidance if manual setting conflicts. |
 | `RENDER_API_KEY` | Key Vault reference or plain (dev) | Must match Rewst `X-Api-Key`. |
 | `DEFAULT_TABLE_THEME` | `TableStyleMedium2` | Optional. |
 | `MAX_REQUEST_BYTES` | `5000000` | Abuse guard; add if missing. |
@@ -285,6 +285,28 @@ The template sets runtime, storage, Insights, and `RENDER_API_KEY`. It does **no
 ### Flex Consumption or custom plans
 
 If you move the app to **Flex Consumption** or another SKU, the portal may manage **`FUNCTIONS_WORKER_RUNTIME`** differently. If deployment fails with conflicting worker settings, follow the portal’s guidance for that plan.
+
+### CI build warning: NETSDK1194 (`--output` with solution)
+
+If your pipeline logs this warning:
+
+`NETSDK1194: The "--output" option isn't supported when building a solution`
+
+you are likely running a command similar to:
+
+```bash
+dotnet build ExcelRenderer.sln -c Release --output ./output
+```
+
+Use one of these instead:
+
+- Build/test the solution **without** solution-level output:
+  - `dotnet build ExcelRenderer.sln -c Release`
+  - `dotnet test ExcelRenderer.sln -c Release`
+- Or publish the function **project** (not solution) with output:
+  - `dotnet publish ExcelRenderer.Functions/ExcelRenderer.Functions.csproj -c Release -o ./output`
+
+Using solution-level `--output` can cause project artifacts to collide in one folder and produce inconsistent builds.
 
 ---
 

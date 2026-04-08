@@ -1,0 +1,5 @@
+# Solution / IDE (repo root)
+.vs/
+*.user
+.DS_Store
+Thumbs.db

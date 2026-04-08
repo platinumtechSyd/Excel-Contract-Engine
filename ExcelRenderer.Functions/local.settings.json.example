@@ -1,0 +1,11 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+    "RENDER_API_KEY": "local-dev-only-change-me",
+    "DEFAULT_TABLE_THEME": "TableStyleMedium2",
+    "MAX_REQUEST_BYTES": "5000000",
+    "MAX_ROWS_PER_SHEET": "20000"
+  }
+}

@@ -91,7 +91,7 @@ Redeploy or restart the Function App after changing settings.
 ## 7. Verify
 
 - **Token:** Client credentials against `https://graph.microsoft.com/.default` should succeed (Entra token endpoint).  
-- **Upload:** Call **`POST /api/rewst/sharepoint/upload`** with a small test file, valid **`site_id`** / **`site_url`**, **`drive_id`** / **`library_name`**, and path under **`RENDER_API_KEY`**.
+- **Upload:** Call **`POST /api/rewst/sharepoint/upload`** with header **`X-Api-Key`** (same value as **`RENDER_API_KEY`** on the Function App). Body uses the Rewst wrapper: **`payload_json`** string whose inner JSON includes a small test file as **`content_base64`**, plus valid **`site_id`** or **`site_url`**, **`drive_id`** or **`library_name`**, and a **`folder_path`** that already exists in the library.
 
 If Graph returns **403**, re-check: admin consent, Sites.Selected **site** grant, correct drive/library, and that the folder path already exists in the library.
 

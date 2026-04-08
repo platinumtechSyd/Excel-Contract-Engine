@@ -34,8 +34,9 @@ public sealed class RenderExcelFunction
         [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "render")] HttpRequestData req,
         FunctionContext _)
     {
-        if (!await AuthorizeAsync(req))
-            return await Text(req, HttpStatusCode.Forbidden, "Invalid or missing API key.");
+        var authErr = await TryAuthResponseAsync(req);
+        if (authErr is not null)
+            return authErr;
 
         var body = await ReadBody(req);
         if (!body.ok)
@@ -107,8 +108,9 @@ public sealed class RenderExcelFunction
         [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "validate")] HttpRequestData req,
         FunctionContext _)
     {
-        if (!await AuthorizeAsync(req))
-            return await Text(req, HttpStatusCode.Forbidden, "Invalid or missing API key.");
+        var authErr = await TryAuthResponseAsync(req);
+        if (authErr is not null)
+            return authErr;
 
         var body = await ReadBody(req);
         if (!body.ok)
@@ -137,7 +139,11 @@ public sealed class RenderExcelFunction
     }
 
     [Function(nameof(Health))]
-    public async Task<HttpResponseData> Health([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "health")] HttpRequestData req, FunctionContext _) => await Text(req, HttpStatusCode.OK, "ok");
+    public async Task<HttpResponseData> Health([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "health")] HttpRequestData req, FunctionContext _)
+    {
+        var authConfigured = !string.IsNullOrWhiteSpace(_config["RENDER_API_KEY"]);
+        return await Json(req, HttpStatusCode.OK, new { status = "ok", auth_configured = authConfigured });
+    }
 
     [Function(nameof(OpenApi))]
     public async Task<HttpResponseData> OpenApi([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "openapi.json")] HttpRequestData req, FunctionContext _)
@@ -171,17 +177,17 @@ public sealed class RenderExcelFunction
 
     private int ReadIntSetting(string name, int fallback) => int.TryParse(_config[name], out var v) ? v : fallback;
 
-    private Task<bool> AuthorizeAsync(HttpRequestData req)
+    private async Task<HttpResponseData?> TryAuthResponseAsync(HttpRequestData req)
     {
-        var expected = _config["RENDER_API_KEY"];
-        if (string.IsNullOrEmpty(expected)) return Task.FromResult(true);
-        if (req.Headers.TryGetValues("X-Api-Key", out var keys) && string.Equals(keys.FirstOrDefault(), expected, StringComparison.Ordinal)) return Task.FromResult(true);
-        if (req.Headers.TryGetValues("Authorization", out var auths))
+        switch (RenderApiKeyAuth.Validate(_config, req))
         {
-            var v = auths.FirstOrDefault();
-            if (!string.IsNullOrEmpty(v) && v.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase) && string.Equals(v["Bearer ".Length..].Trim(), expected, StringComparison.Ordinal)) return Task.FromResult(true);
+            case RenderApiKeyAuthResult.Ok:
+                return null;
+            case RenderApiKeyAuthResult.MissingServerKey:
+                return await Text(req, HttpStatusCode.ServiceUnavailable, "RENDER_API_KEY is not configured on the server.");
+            default:
+                return await Text(req, HttpStatusCode.Forbidden, "Invalid or missing API key.");
         }
-        return Task.FromResult(false);
     }
 
     private static string SanitizeFileName(string name)

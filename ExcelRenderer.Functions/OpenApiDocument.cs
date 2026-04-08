@@ -7,8 +7,8 @@ internal static class OpenApiDocument
   "openapi": "3.0.3",
   "info": {
     "title": "Excel Renderer",
-    "version": "1.1.2",
-    "description": "Rewst-friendly API for validating and rendering Excel from JSON contracts."
+    "version": "1.1.3",
+    "description": "Validates and renders Excel from JSON contracts. Protected routes require header X-Api-Key (or Authorization: Bearer) matching app setting RENDER_API_KEY. If RENDER_API_KEY is not set on the server, responses are 503. Wrong or missing client credentials return 403."
   },
   "servers": [{ "url": "/" }],
   "paths": {
@@ -20,9 +20,9 @@ internal static class OpenApiDocument
           {
             "name": "X-Api-Key",
             "in": "header",
-            "required": false,
+            "required": true,
             "schema": { "type": "string" },
-            "description": "Required when RENDER_API_KEY is configured."
+            "description": "Must match Function App setting RENDER_API_KEY. Alternatively send Authorization: Bearer with the same value."
           }
         ],
         "requestBody": {
@@ -87,7 +87,8 @@ internal static class OpenApiDocument
               }
             }
           },
-          "403": { "description": "Missing or invalid API key" }
+          "403": { "description": "Missing or invalid API key" },
+          "503": { "description": "RENDER_API_KEY is not configured on the Function App" }
         }
       }
     },
@@ -99,8 +100,9 @@ internal static class OpenApiDocument
           {
             "name": "X-Api-Key",
             "in": "header",
-            "required": false,
-            "schema": { "type": "string" }
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Must match Function App setting RENDER_API_KEY. Alternatively send Authorization: Bearer with the same value."
           }
         ],
         "requestBody": {
@@ -128,7 +130,8 @@ internal static class OpenApiDocument
               }
             }
           },
-          "403": { "description": "Missing or invalid API key" }
+          "403": { "description": "Missing or invalid API key" },
+          "503": { "description": "RENDER_API_KEY is not configured on the Function App" }
         }
       }
     },
@@ -138,8 +141,12 @@ internal static class OpenApiDocument
         "operationId": "health",
         "responses": {
           "200": {
-            "description": "ok",
-            "content": { "text/plain": { "schema": { "type": "string", "example": "ok" } } }
+            "description": "Service is running; auth_configured indicates whether RENDER_API_KEY is set (no secret values returned).",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HealthResponse" }
+              }
+            }
           }
         }
       }
@@ -216,6 +223,17 @@ internal static class OpenApiDocument
         "type": "object",
         "properties": {
           "format": { "type": "string", "enum": ["binary", "base64", "base64_json"], "default": "binary" }
+        }
+      },
+      "HealthResponse": {
+        "type": "object",
+        "required": ["status", "auth_configured"],
+        "properties": {
+          "status": { "type": "string", "example": "ok" },
+          "auth_configured": {
+            "type": "boolean",
+            "description": "True when RENDER_API_KEY is non-empty on the server. False means protected routes will return 503 until configured."
+          }
         }
       }
     }

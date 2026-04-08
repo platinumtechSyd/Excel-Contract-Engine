@@ -11,7 +11,7 @@ Use a **child workflow** (or sequential tasks) so every render is preceded by a 
 | Root has `workbook` (tables, `conditional_formats`, `row_rules`, …) | `POST /api/rewst/tier1/validate` | `POST /api/rewst/tier1/render` |
 | Root has `sheets` (+ usually `sources`) | `POST /api/rewst/tier2/validate` | `POST /api/rewst/tier2/render` |
 
-Body for all four is the same wrapper:
+Body for validate/render (all four tier routes) uses the same wrapper:
 
 ```json
 {
@@ -40,7 +40,7 @@ The function logs a line like: `Rewst request RewstTier1Render correlation_id=<v
 
 ## OpenAPI import
 
-Import **`GET /api/openapi-rewst.json`**. You should see **four** POST operations (tier1/tier2 × validate/render) plus optional **`X-Correlation-Id`** on each. **`X-Api-Key`** stays on the integration only.
+Import **`GET /api/openapi-rewst.json`**. You should see **five** POST operations: tier1/tier2 × validate/render, plus **`POST /api/rewst/sharepoint/upload`**. Optional **`X-Correlation-Id`** is listed on each. **`X-Api-Key`** stays on the integration only.
 
 The same document lives in the repo as **`ExcelRenderer.Functions/openapi-rewst.json`** (valid JSON with escaped `payload_json` strings). You can share that file or the hosted URL—see below.
 

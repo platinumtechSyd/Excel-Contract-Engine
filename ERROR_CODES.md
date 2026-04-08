@@ -1,5 +1,18 @@
 # Validation and error codes
 
+## HTTP status (auth and configuration)
+
+Protected routes (`POST /api/render`, `POST /api/validate`, Rewst `POST` routes, SharePoint upload) use this behavior:
+
+| Status | Meaning |
+|--------|---------|
+| **403** | Missing or wrong **`X-Api-Key`** / **`Authorization: Bearer`** (must match **`RENDER_API_KEY`**). |
+| **503** | **`RENDER_API_KEY`** is **not set** (empty or missing) in app settings—configure a non-empty value and restart the Function App. |
+
+**GET `/api/health`** is unauthenticated and returns JSON including **`auth_configured`**: `false` when **`RENDER_API_KEY`** is unset (so monitors can detect misconfiguration without calling a protected route).
+
+---
+
 Responses from **`/api/rewst/tier1/*`**, **`/api/rewst/tier2/*`**, **`/api/validate`**, and failed **`/api/render`** calls may include `errors` and `warnings` arrays. Each item has:
 
 | Field | Meaning |

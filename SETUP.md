@@ -16,6 +16,7 @@ This guide takes you from **clone** to a **running Function App**, **secure conf
 |------|-------------|
 | **[Path A — Azure Portal (recommended)](#path-a--azure-portal-recommended)** | You want **clear, single-instance** creation in the portal step by step (best default for a rebuild). |
 | **[Path B — Bicep (optional)](#path-b--bicep-optional)** | You want **repeatable** infrastructure-as-code using `infra/main.bicep`. |
+| **[Security and operations checklist](#security-and-operations-checklist)** | You want a **single place** for auth, abuse limits, rate limiting, Graph, dependencies, and testing expectations. |
 
 **After resources exist**, both paths share the same ideas: **managed identity**, **Key Vault** for secrets (recommended), **app settings**, **publish code**, **smoke tests**, **Rewst**, **monitoring**, and **ongoing** checks.
 
@@ -44,8 +45,13 @@ Follow these steps in order.
 
 ```bash
 git clone <your-fork-url>
-cd <repository-root>    # folder created by clone (e.g. Excel-Renderder-Tool)
+cd <repository-root>    # folder created by clone (e.g. Excel-Contract-Engine)
 cd ExcelRenderer.Functions
+```
+
+Copy **`local.settings.json.example`** to **`local.settings.json`** and set a non-empty **`RENDER_API_KEY`** (do not commit **`local.settings.json`**).
+
+```bash
 dotnet build -c Release
 ```
 
@@ -55,7 +61,7 @@ Optional local run (no Azure):
 func start
 ```
 
-Open `http://localhost:7071/api/health` (port may differ; see `func` output).
+Open `http://localhost:7071/api/health` (port may differ; see `func` output). Expect JSON: **`{"status":"ok","auth_configured":true}`** when the key is set.
 
 ### Step 2 — Create a resource group
 
@@ -163,6 +169,10 @@ Replace `<func-host>` with `https://<functionAppName>.azurewebsites.net` and `<a
 curl "<func-host>/api/health"
 ```
 
+Expect **`"status":"ok"`** and **`auth_configured`** (whether **`RENDER_API_KEY`** is set on the server—no secrets returned).
+
+**Automated smoke (local or deployed host running):** set **`SMOKE_API_KEY`** to the same value as **`RENDER_API_KEY`**, then run **`scripts/smoke-test.ps1`** (PowerShell) or **`scripts/smoke-test.sh`** (bash). Optional **`SMOKE_BASE_URL`** (default `http://localhost:7071`).
+
 **Validate (tier 1 sample)** — one line (bash, Git Bash, or WSL):
 
 ```bash
@@ -187,6 +197,8 @@ Expect **`"openapi": "3.0.3"`** and tier routes.
 
 **Runbook / documentation (recommended):** Store in your team wiki or repo notes (not secrets): **Function App name**, **public base URL**, **Rewst integration name**, **which OpenAPI URL** you imported, **approximate date** of last OpenAPI refresh, and **who** rotates **`RENDER_API_KEY`**. After tenant moves or URL changes, update Rewst and this record.
 
+**Bicep:** **`renderApiKey`** is a **required** parameter (no default). Older templates that omitted it must pass a non-empty key; empty **`RENDER_API_KEY`** in Azure causes **503** on protected routes until fixed.
+
 ### Step 10 — Application Insights monitoring and alerts (recommended)
 
 Insights is usually attached during Function App creation. Use it for **logs**, **failures**, and **usage**.
@@ -196,8 +208,10 @@ Insights is usually attached during Function App creation. Use it for **logs**, 
 | Signal | Why |
 |--------|-----|
 | **HTTP 5xx** rate or count | Catch regressions and dependency failures early. |
+| **HTTP 503** on **`/api/*`** (excluding health) | Often **missing or empty `RENDER_API_KEY`** after a bad deploy or config change—see [ERROR_CODES.md](./ERROR_CODES.md). |
 | **Sudden spike in requests** | Possible abuse or a runaway workflow. |
 | **Failed requests** / **exceptions** | Surfaces cold-start issues and bad payloads. |
+| **`auth_configured: false`** on **`GET /api/health`** | **`RENDER_API_KEY`** not set—protected routes will return **503** until the setting is fixed. |
 
 Create rules in **Azure Portal** → your **Application Insights** (or **Monitor** → **Alerts**) using KQL or metric criteria. [Azure Functions monitoring](https://learn.microsoft.com/azure/azure-functions/functions-monitoring) describes built-in integration.
 
@@ -206,9 +220,9 @@ Create rules in **Azure Portal** → your **Application Insights** (or **Monitor
 - **Sites.Selected** grants are **per site**. After **site renames**, **migrations**, or **new libraries**, re-check grants in Entra and paths in workflows—see **[ENTRA_GRAPH_SETUP.md](./ENTRA_GRAPH_SETUP.md)**.
 - **Rotate** `GRAPH_CLIENT_SECRET` in Entra and update Key Vault; app settings references usually stay the same if the secret **name** in Key Vault is unchanged (or update the URI).
 
-### Step 12 — Optional: Restrict access to Rewst outbound IPs
+### Step 12 — Strongly recommended: Restrict access to Rewst outbound IPs
 
-Defense in depth **on top of** HTTPS and **`X-Api-Key`**: allowlist **Rewst’s static outbound NAT IPs** for your region.
+Defense in depth **on top of** HTTPS and **`X-Api-Key`**: allowlist **Rewst’s static outbound NAT IPs** for your region. **This is the expected posture** for Rewst-only automation so the public endpoint is not reachable from arbitrary networks.
 
 **Source of truth (IPs can change):** [Rewst — Incoming and outgoing domains and IPs](https://docs.rewst.help/security/security-policy)
 
@@ -257,7 +271,7 @@ az deployment group create \
 | `functionAppName` | Hostname `https://<functionAppName>.azurewebsites.net`. |
 | `storageAccountName` | Lowercase; globally unique. |
 | `appInsightsName` | Globally unique. |
-| `renderApiKey` | Plain parameter—fine for first deploy; **replace with Key Vault references** in the portal afterward for production (see [Step 5](#step-5--store-secrets-in-azure-key-vault-recommended)). |
+| `renderApiKey` | **Required** (non-empty). Plain parameter is fine for first deploy; **replace with Key Vault references** in the portal afterward for production (see [Step 5](#step-5--store-secrets-in-azure-key-vault-recommended)). |
 | `defaultTableTheme` | Optional; default `TableStyleMedium2`. |
 
 The template sets runtime, storage, Insights, and `RENDER_API_KEY`. It does **not** create Key Vault—add that separately.
@@ -278,9 +292,11 @@ If you move the app to **Flex Consumption** or another SKU, the portal may manag
 
 | Symptom | Things to check |
 |---------|------------------|
-| **403** on API | `RENDER_API_KEY` matches `X-Api-Key`; Key Vault reference resolves (no error on **Configuration**). |
+| **403** on API | Client sent wrong or no key; Rewst **`X-Api-Key`** matches **`RENDER_API_KEY`**; Key Vault reference resolves (no error on **Configuration**). |
+| **503** on `/api/render`, `/api/validate`, Rewst routes | **`RENDER_API_KEY`** is **missing or empty** in app settings—set a non-empty value and restart. |
 | **404** on `/api/...` | Code not published; wrong app name; check **Functions** in Portal. |
 | **500** on first request | Cold start—retry; **Log stream** / Application Insights. |
+| **Health** no longer plain **`ok` text** | **`GET /api/health`** returns JSON (`status`, `auth_configured`). Update probes that expected **`text/plain`**. |
 | **OpenAPI empty or old** | **`openapi-rewst.json`** deployed with the DLL. Redeploy. |
 | **Validation errors with `path`** | [ERROR_CODES.md](./ERROR_CODES.md). |
 | **SharePoint / Graph 403** | [ENTRA_GRAPH_SETUP.md](./ENTRA_GRAPH_SETUP.md): consent, **Sites.Selected**, paths. |
@@ -291,6 +307,22 @@ If you move the app to **Flex Consumption** or another SKU, the portal may manag
 - **Consumption** scales to zero; first request after idle can be slow.  
 - **Rotate** `RENDER_API_KEY` and update Rewst; update Key Vault secret values or versions as you use them.  
 - Tune **`MAX_REQUEST_BYTES`** and **`MAX_ROWS_PER_SHEET`** for abuse protection.
+
+---
+
+## Security and operations checklist
+
+This app does **not** implement every control by itself—combine it with Azure and process choices below.
+
+| Topic | What the code does | What you should do |
+|--------|---------------------|---------------------|
+| **API authentication** | **`RENDER_API_KEY`** must be **non-empty**. Clients must send **`X-Api-Key`** or **`Authorization: Bearer`** with that value, or they get **403**. If the app setting is **missing or empty**, protected routes return **503**. | **Always set** a strong key in **production** and **local** (`local.settings.json` / user secrets). Use **Key Vault references** in Azure ([Step 5](#step-5--store-secrets-in-azure-key-vault-recommended)). |
+| **Abuse and payload size** | Enforces **`MAX_REQUEST_BYTES`** (body / `payload_json` size) and **`MAX_ROWS_PER_SHEET`** during render. SharePoint upload is capped at **250 MB** decoded (Graph single-PUT limit). | Set limits appropriate for your data. Use [Application Insights alerts](#step-10--application-insights-monitoring-and-alerts-recommended) for spikes and 5xx. |
+| **Rate limiting** | No per-caller rate limit inside the function code. | **Strongly recommended:** [Step 12](#step-12--strongly-recommended-restrict-access-to-rewst-outbound-ips) **Rewst IP allowlists** where your SKU supports it. Optionally add **Azure Front Door**, **API Management**, or **WAF** if the hostname is broadly exposed. |
+| **Secrets** | Reads `RENDER_API_KEY`, `GRAPH_*` from app settings. | Store values in **Key Vault** and use **references** in Configuration; rotate on a schedule ([Step 5](#step-5--store-secrets-in-azure-key-vault-recommended), [Step 11](#step-11--ongoing-microsoft-graph-and-sharepoint-if-used)). |
+| **Microsoft Graph / SharePoint** | Client credentials; validates site/drive exclusivity and file size. | Prefer **`Sites.Selected`** and per-site grants ([ENTRA_GRAPH_SETUP.md](./ENTRA_GRAPH_SETUP.md)). Treat **`folder_path`** and **`file_name`** as **trusted** (workflow-controlled); avoid passing end-user-controlled path strings straight through without review. |
+| **Dependencies** | .NET + NuGet packages (e.g. ClosedXML). | **Dependabot** is configured (`.github/dependabot.yml`) for NuGet and GitHub Actions. Also run **`dotnet list package --outdated`** and redeploy after security updates. |
+| **Automated tests** | **CI** runs **`dotnet test`** (API key logic). No full HTTP integration test in CI. | Run **`scripts/smoke-test.ps1`** or **`scripts/smoke-test.sh`** with a live host ([Step 8](#step-8--smoke-test-production-url)); add canary workflows if you need stronger change safety. |
 
 ---
 

@@ -1,6 +1,6 @@
 # Rewst payload guide
 
-This project’s **Rewst** integration (from **`/api/openapi-rewst.json`**) exposes **four** HTTP actions—tier 1 vs tier 2, validate vs render—each with a single body field, **`payload_json`**: a **string** containing the full renderer contract as JSON. The workbook layout, column types, conditional formatting, row rules, and table themes all live **inside** that string—not in the OpenAPI schema—so Rewst stays simple while the renderer stays capable.
+This project’s **Rewst** integration (from **`/api/openapi-rewst.json`**) exposes **five** POST actions: tier 1 vs tier 2 × validate vs render, plus **SharePoint upload**. Each action has a single body field, **`payload_json`**: a **string**. For validate/render, that string holds the **Excel contract** JSON (workbook layout, column types, conditional formatting, row rules, table themes). For SharePoint upload, it holds **upload parameters** (see [SharePoint upload](#sharepoint-upload-optional)). Those details live **inside** the string—not in the OpenAPI schema—so Rewst stays simple while the API stays capable.
 
 **Operators:** Fork, deploy your own instance, and supply your own API key—see [README — Fork, deploy, and API keys](./README.md#fork-deploy-and-api-keys-operators) and **[SETUP.md](./SETUP.md)** (Azure). As-is; no guaranteed support.
 
@@ -12,6 +12,7 @@ This project’s **Rewst** integration (from **`/api/openapi-rewst.json`**) expo
 | Render tier 1 | `POST` | `/api/rewst/tier1/render` |
 | Validate tier 2 (inner JSON has `sheets`) | `POST` | `/api/rewst/tier2/validate` |
 | Render tier 2 | `POST` | `/api/rewst/tier2/render` |
+| Upload file to SharePoint (Graph; inner JSON is upload payload, not a workbook) | `POST` | `/api/rewst/sharepoint/upload` |
 | Rewst OpenAPI spec | `GET` | `/api/openapi-rewst.json` |
 
 Import **`/api/openapi-rewst.json`** into Rewst. Configure **API key** on the HTTP integration (`X-Api-Key`); it must not appear as a per-action input. Optional **`X-Correlation-Id`** (or integration-level headers) helps trace requests in logs—see [REWST_SUBWORKFLOW.md](./REWST_SUBWORKFLOW.md).
@@ -26,7 +27,36 @@ Recommended pattern: **validate then render** using matching tier routes ([REWST
 }
 ```
 
-Build `payload_json` by serializing your contract object to a string (escape quotes as required). The **inner** JSON is what the sections below describe.
+Build `payload_json` by serializing your contract object to a string (escape quotes as required). The **inner** JSON is what the sections below describe (except for SharePoint upload).
+
+## SharePoint upload (optional)
+
+**Route:** `POST /api/rewst/sharepoint/upload` — same Rewst wrapper **`{ "payload_json": "<string>" }`**, but the inner JSON is **not** a workbook contract. It targets a library path and supplies file bytes. Configure **`GRAPH_*`** on the Function App and Entra per **[ENTRA_GRAPH_SETUP.md](./ENTRA_GRAPH_SETUP.md)**.
+
+| Field | Required | Notes |
+|-------|----------|--------|
+| `file_name` | Yes | Target filename in the library. |
+| `content_base64` | Yes | File bytes (e.g. from a prior **`/api/rewst/tier1/render`** response’s `content_base64`). |
+| `site_id` or `site_url` | One of | How Graph resolves the site. |
+| `drive_id` or `library_name` | One of | Document library / drive. |
+| `folder_path` | Typical | Path under the library root; **folders must already exist** (see [SETUP.md](./SETUP.md)). |
+| `content_type` | No | e.g. MIME type for the upload. |
+| `overwrite` | No | Default `true`. |
+
+**Example** — inner JSON (then stringified into `payload_json`):
+
+```json
+{
+  "site_url": "https://contoso.sharepoint.com/sites/ExampleSite",
+  "library_name": "Documents",
+  "folder_path": "Automation/Exports",
+  "file_name": "report.xlsx",
+  "content_base64": "<base64 from render step>",
+  "overwrite": true
+}
+```
+
+Errors use **`status`** / **`error_code`** (not the validate/render `errors[]` shape); see [ERROR_CODES.md](./ERROR_CODES.md).
 
 ## Inner contract: tier 1 (workbook) vs tier 2 (sources + sheets)
 

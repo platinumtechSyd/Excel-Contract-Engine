@@ -3,7 +3,8 @@ param namePrefix string
 param functionAppName string
 param storageAccountName string
 param appInsightsName string
-param renderApiKey string = ''
+@description('Required. Must be non-empty; the Function App rejects protected routes if RENDER_API_KEY is missing.')
+param renderApiKey string
 param defaultTableTheme string = 'TableStyleMedium2'
 
 resource storage 'Microsoft.Storage/storageAccounts@2023-05-01' = {

@@ -74,8 +74,9 @@ public sealed class RewstExcelFunction
         ContractTierExpectation tier,
         string operationName)
     {
-        if (!await AuthorizeAsync(req))
-            return await Json(req, HttpStatusCode.Forbidden, new { error = "Invalid or missing API key." });
+        var authErr = await TryAuthResponseAsync(req);
+        if (authErr is not null)
+            return authErr;
 
         LogRewstRequest(req, operationName);
 
@@ -132,8 +133,9 @@ public sealed class RewstExcelFunction
         ContractTierExpectation tier,
         string operationName)
     {
-        if (!await AuthorizeAsync(req))
-            return await Json(req, HttpStatusCode.Forbidden, new { error = "Invalid or missing API key." });
+        var authErr = await TryAuthResponseAsync(req);
+        if (authErr is not null)
+            return authErr;
 
         LogRewstRequest(req, operationName);
 
@@ -306,17 +308,17 @@ public sealed class RewstExcelFunction
 
     private int ReadIntSetting(string name, int fallback) => int.TryParse(_config[name], out var v) ? v : fallback;
 
-    private Task<bool> AuthorizeAsync(HttpRequestData req)
+    private async Task<HttpResponseData?> TryAuthResponseAsync(HttpRequestData req)
     {
-        var expected = _config["RENDER_API_KEY"];
-        if (string.IsNullOrEmpty(expected)) return Task.FromResult(true);
-        if (req.Headers.TryGetValues("X-Api-Key", out var keys) && string.Equals(keys.FirstOrDefault(), expected, StringComparison.Ordinal)) return Task.FromResult(true);
-        if (req.Headers.TryGetValues("Authorization", out var auths))
+        switch (RenderApiKeyAuth.Validate(_config, req))
         {
-            var v = auths.FirstOrDefault();
-            if (!string.IsNullOrEmpty(v) && v.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase) && string.Equals(v["Bearer ".Length..].Trim(), expected, StringComparison.Ordinal)) return Task.FromResult(true);
+            case RenderApiKeyAuthResult.Ok:
+                return null;
+            case RenderApiKeyAuthResult.MissingServerKey:
+                return await Json(req, HttpStatusCode.ServiceUnavailable, new { error = "RENDER_API_KEY is not configured on the server." });
+            default:
+                return await Json(req, HttpStatusCode.Forbidden, new { error = "Invalid or missing API key." });
         }
-        return Task.FromResult(false);
     }
 
     private static string SanitizeFileName(string name)

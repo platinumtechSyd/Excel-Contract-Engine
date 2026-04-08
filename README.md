@@ -2,12 +2,24 @@
 
 This project accepts Rewst contracts and returns `.xlsx` files.
 
+## Documentation map
+
+| Audience | Start here |
+|----------|------------|
+| **Operators** (deploy, keys, monitoring) | [Fork, deploy, and API keys](#fork-deploy-and-api-keys-operators) → [SETUP.md](./SETUP.md) ([security checklist](./SETUP.md#security-and-operations-checklist)) |
+| **CI** | GitHub Actions: **`dotnet test`** + **`dotnet build`** on push/PR (`.github/workflows/ci.yml`) |
+| **Rewst authors** (validate → render, `payload_json`) | [REWST_SUBWORKFLOW.md](./REWST_SUBWORKFLOW.md), [REWST_PAYLOAD_GUIDE.md](./REWST_PAYLOAD_GUIDE.md) |
+| **SharePoint / Graph** | [ENTRA_GRAPH_SETUP.md](./ENTRA_GRAPH_SETUP.md), [SETUP.md](./SETUP.md) (app settings) |
+| **Error codes and `path`** | [ERROR_CODES.md](./ERROR_CODES.md) |
+
+**Versioning:** Feature bullets below (e.g. v1.1) describe **contract and API behavior**. The **`info.version`** field inside **`/api/openapi-rewst.json`** is the **Rewst OpenAPI document** revision only; it may move independently of `schema_version` in your JSON contracts.
+
 ## Fork, deploy, and API keys (operators)
 
 This is **not** a hosted product. If you use it, you are expected to **fork the repository**, **deploy your own** Azure Functions instance (or run it locally), and **operate it yourself**.
 
 - **Your API key** — Create a secret (e.g. `RENDER_API_KEY` in app settings) and configure Rewst’s HTTP integration to send **`X-Api-Key`** with that value. **You generate and rotate keys; nothing is issued to you by this repo.** Prefer storing it in **Azure Key Vault** and referencing it from app settings (see [SETUP.md](./SETUP.md)).
-- **Your environment** — You own configuration, networking, cost, and security hardening. **Secrets:** Key Vault references for `RENDER_API_KEY` and `GRAPH_CLIENT_SECRET` where possible. **Monitoring:** Application Insights alerts for 5xx and unusual traffic (recommended in [SETUP.md](./SETUP.md)). **Runbook:** Record base URL, Rewst integration details, and rotation ownership outside of git secrets. **Optional:** **allowlist Rewst’s outbound NAT IPs** ([SETUP.md](./SETUP.md); [Rewst security policy](https://docs.rewst.help/security/security-policy)).
+- **Your environment** — You own configuration, networking, cost, and security hardening. **Secrets:** Key Vault references for `RENDER_API_KEY` and `GRAPH_CLIENT_SECRET` where possible. **Monitoring:** Application Insights alerts for 5xx and unusual traffic (recommended in [SETUP.md](./SETUP.md)). **Runbook:** Record base URL, Rewst integration details, and rotation ownership outside of git secrets. **Strongly recommended:** **restrict inbound traffic to Rewst’s outbound NAT IPs** for your region ([SETUP.md — Step 12](./SETUP.md#step-12--strongly-recommended-restrict-access-to-rewst-outbound-ips); [Rewst security policy](https://docs.rewst.help/security/security-policy)). On **Consumption** plans you may need **Premium / Dedicated** (or another edge) to enforce IP rules on the Function App.
 - **Buyer beware** — Provided **as-is**, without warranty. **No guaranteed support**, SLA, or obligation to help with your fork, workflows, or deployments. Use at your own risk.
 
 **Azure setup (Portal-first, optional Bicep):** [SETUP.md](./SETUP.md) — create the Function App in the **Azure Portal** step by step, or deploy **`infra/main.bicep`**, then follow the same security and Rewst steps.
@@ -40,7 +52,7 @@ This is **not** a hosted product. If you use it, you are expected to **fork the 
 
 ## API endpoints (generic HTTP)
 
-These endpoints take the **inner contract JSON** as the request body (not the Rewst `payload_json` wrapper):
+These endpoints take the **inner contract JSON** as the request body (not the Rewst `payload_json` wrapper). Validation and rendering rules match the Rewst tier routes; generic routes do not enforce tier via the URL, so keep your inner JSON shape consistent with how you call **`/api/rewst/tier1/*`** vs **`/api/rewst/tier2/*`**.
 
 - `POST /api/render`
 - `POST /api/validate`
@@ -120,16 +132,23 @@ Example success response:
 ## Required app settings
 
 - `FUNCTIONS_WORKER_RUNTIME=dotnet-isolated`
-- `RENDER_API_KEY` (optional but recommended)
+- `RENDER_API_KEY` — **required** (non-empty). Clients must send **`X-Api-Key`** or **`Authorization: Bearer`** with the same value. If the app setting is **missing or empty**, protected routes return **503** (misconfiguration). For **local** runs, set it in **`local.settings.json`** (see **`ExcelRenderer.Functions/local.settings.json.example`**) or user secrets; never commit real keys. Prefer **Key Vault** references in Azure: [SETUP.md](./SETUP.md).
 - `DEFAULT_TABLE_THEME` (optional, default `TableStyleMedium2`)
 - `MAX_REQUEST_BYTES` (default 5000000)
 - `MAX_ROWS_PER_SHEET` (default 20000)
 
+**Hardening summary:** [SETUP.md — Security and operations checklist](./SETUP.md#security-and-operations-checklist).
+
 ## Local run
+
+1. Copy **`ExcelRenderer.Functions/local.settings.json.example`** to **`local.settings.json`** and set **`RENDER_API_KEY`** (see [SETUP.md](./SETUP.md) Step 1).
+2. From **`ExcelRenderer.Functions`**:
 
 ```bash
 func start
 ```
+
+3. Optional: with the host up, **`SMOKE_API_KEY=<same as RENDER_API_KEY>`** then run **`scripts/smoke-test.sh`** or **`scripts/smoke-test.ps1`**.
 
 ## Azure deployment
 

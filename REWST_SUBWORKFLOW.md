@@ -27,6 +27,7 @@ Body for all four is the same wrapper:
 4. If `valid` is **false**: handle `errors` (and optionally `warnings`); use `path` and [ERROR_CODES.md](./ERROR_CODES.md); do not call render.
 5. If `valid` is **true**: **call render** with the **same** `payload_json` (and same tier).
 6. **Decode** `content_base64` from the render response when you need the `.xlsx` file.
+7. **Optional — SharePoint:** call **`POST /api/rewst/sharepoint/upload`** with a new `payload_json` containing `content_base64`, `file_name`, `folder_path`, site/drive resolution, plus Graph app settings on the Function App (see [SETUP.md](./SETUP.md)).
 
 ## Correlation id (optional)
 

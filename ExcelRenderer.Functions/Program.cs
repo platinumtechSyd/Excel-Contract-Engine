@@ -14,5 +14,9 @@ builder.Services
 
 builder.Services.AddSingleton<ExcelRenderService>();
 builder.Services.AddSingleton<ContractNormalizationService>();
+builder.Services.AddHttpClient<GraphSharePointUploadService>(client =>
+{
+    client.Timeout = TimeSpan.FromMinutes(15);
+});
 
 builder.Build().Run();

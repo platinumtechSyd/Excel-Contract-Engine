@@ -6,11 +6,11 @@ This project accepts Rewst contracts and returns `.xlsx` files.
 
 This is **not** a hosted product. If you use it, you are expected to **fork the repository**, **deploy your own** Azure Functions instance (or run it locally), and **operate it yourself**.
 
-- **Your API key** — Create a secret (e.g. `RENDER_API_KEY` in app settings) and configure Rewst’s HTTP integration to send **`X-Api-Key`** with that value. **You generate and rotate keys; nothing is issued to you by this repo.**
-- **Your environment** — You own configuration, networking, monitoring, cost, and security hardening.
+- **Your API key** — Create a secret (e.g. `RENDER_API_KEY` in app settings) and configure Rewst’s HTTP integration to send **`X-Api-Key`** with that value. **You generate and rotate keys; nothing is issued to you by this repo.** Prefer storing it in **Azure Key Vault** and referencing it from app settings (see [SETUP.md](./SETUP.md)).
+- **Your environment** — You own configuration, networking, cost, and security hardening. **Secrets:** Key Vault references for `RENDER_API_KEY` and `GRAPH_CLIENT_SECRET` where possible. **Monitoring:** Application Insights alerts for 5xx and unusual traffic (recommended in [SETUP.md](./SETUP.md)). **Runbook:** Record base URL, Rewst integration details, and rotation ownership outside of git secrets. **Optional:** **allowlist Rewst’s outbound NAT IPs** ([SETUP.md](./SETUP.md); [Rewst security policy](https://docs.rewst.help/security/security-policy)).
 - **Buyer beware** — Provided **as-is**, without warranty. **No guaranteed support**, SLA, or obligation to help with your fork, workflows, or deployments. Use at your own risk.
 
-**Azure setup (Bicep, publish, smoke tests, Rewst):** [SETUP.md](./SETUP.md)
+**Azure setup (Portal-first, optional Bicep):** [SETUP.md](./SETUP.md) — create the Function App in the **Azure Portal** step by step, or deploy **`infra/main.bicep`**, then follow the same security and Rewst steps.
 
 ## Contract tiers
 
@@ -55,6 +55,8 @@ Import **`GET /api/openapi-rewst.json`** into Rewst. Each generated action has o
 |------|----------|--------|-----------------|
 | 1 | `POST /api/rewst/tier1/validate` | `POST /api/rewst/tier1/render` | `workbook` |
 | 2 | `POST /api/rewst/tier2/validate` | `POST /api/rewst/tier2/render` | `sheets` (array) |
+
+**SharePoint (optional):** `POST /api/rewst/sharepoint/upload` — upload `content_base64` via Microsoft Graph (**`GRAPH_*`** app settings). Entra app + permissions: **[ENTRA_GRAPH_SETUP.md](./ENTRA_GRAPH_SETUP.md)**; deploy + settings: [SETUP.md](./SETUP.md).
 
 Set **`X-Api-Key`** on the HTTP integration (not per action) to the **same value** you configured as `RENDER_API_KEY` on **your** Function App. Optional **`X-Correlation-Id`** is listed in the Rewst OpenAPI for tracing; you can instead configure headers on the integration.
 
@@ -131,4 +133,4 @@ func start
 
 ## Azure deployment
 
-Full walkthrough (resource group, **Bicep**, publish code via **Deployment Center** or **`func azure functionapp publish`**, app settings, smoke tests, Rewst OpenAPI URL): **[SETUP.md](./SETUP.md)**.
+Full walkthrough (**Azure Portal** as the default path, **Bicep** optional, Key Vault, publish, smoke tests, Rewst): **[SETUP.md](./SETUP.md)**.

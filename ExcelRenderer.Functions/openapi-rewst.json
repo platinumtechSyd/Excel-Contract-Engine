@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Excel Renderer (Rewst)",
-    "version": "2.0.2",
+    "version": "2.1.0",
     "description": "Rewst integration: validate and render Excel using payload_json (stringified inner contract). Use tier 1 routes when the inner JSON has a workbook root; use tier 2 routes when it has sources and sheets. You deploy your own Function App and generate your own API key (RENDER_API_KEY / X-Api-Key); none is provided here. Optional X-Correlation-Id for tracing logs. Examples are synthetic. No warranty or guaranteed support—see repository README. REWST_PAYLOAD_GUIDE.md, REWST_SUBWORKFLOW.md, ERROR_CODES.md."
   },
   "servers": [
@@ -265,6 +265,60 @@
           }
         }
       }
+    },
+    "/api/rewst/sharepoint/upload": {
+      "post": {
+        "summary": "Upload file bytes to SharePoint (Microsoft Graph, client credentials)",
+        "description": "Requires GRAPH_TENANT_ID, GRAPH_CLIENT_ID, GRAPH_CLIENT_SECRET and Entra app with Sites.Selected (or appropriate Graph permissions). Inner JSON is stringified in payload_json.",
+        "operationId": "rewstSharePointUpload",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RewstPayload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "File uploaded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SharePointUploadResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or Graph error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SharePointUploadError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing or invalid API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -418,6 +472,91 @@
         ],
         "properties": {
           "error": {
+            "type": "string"
+          }
+        }
+      },
+      "SharePointUploadInner": {
+        "type": "object",
+        "description": "Content of payload_json for sharepoint/upload. Provide exactly one of site_id or site_url; exactly one of drive_id or library_name.",
+        "required": [
+          "file_name",
+          "content_base64"
+        ],
+        "properties": {
+          "site_id": {
+            "type": "string",
+            "description": "Graph site id (if site_url not used)"
+          },
+          "site_url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Full SharePoint site URL (if site_id not used)"
+          },
+          "drive_id": {
+            "type": "string",
+            "description": "Drive id (if library_name not used)"
+          },
+          "library_name": {
+            "type": "string",
+            "description": "Document library display name (if drive_id not used)"
+          },
+          "folder_path": {
+            "type": "string",
+            "description": "Folder path under library root, use forward slashes"
+          },
+          "file_name": {
+            "type": "string"
+          },
+          "content_base64": {
+            "type": "string",
+            "format": "byte"
+          },
+          "content_type": {
+            "type": "string",
+            "example": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+          },
+          "overwrite": {
+            "type": "boolean",
+            "default": true
+          }
+        }
+      },
+      "SharePointUploadResponse": {
+        "type": "object",
+        "required": [
+          "status",
+          "web_url"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "ok"
+          },
+          "web_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "path": {
+            "type": "string",
+            "description": "Graph parentReference.path when available"
+          },
+          "item_id": {
+            "type": "string"
+          }
+        }
+      },
+      "SharePointUploadError": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "error"
+          },
+          "error_code": {
+            "type": "string"
+          },
+          "message": {
             "type": "string"
           }
         }

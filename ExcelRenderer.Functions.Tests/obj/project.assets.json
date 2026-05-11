@@ -5990,19 +5990,19 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\benma\\.nuget\\packages\\": {}
+    "/home/runner/.nuget/packages/": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "c:\\Users\\benma\\New folder\\Excel-Contract-Engine-1\\ExcelRenderer.Functions.Tests\\ExcelRenderer.Functions.Tests.csproj",
+      "projectUniqueName": "/home/runner/work/Excel-Contract-Engine/Excel-Contract-Engine/ExcelRenderer.Functions.Tests/ExcelRenderer.Functions.Tests.csproj",
       "projectName": "ExcelRenderer.Functions.Tests",
-      "projectPath": "c:\\Users\\benma\\New folder\\Excel-Contract-Engine-1\\ExcelRenderer.Functions.Tests\\ExcelRenderer.Functions.Tests.csproj",
-      "packagesPath": "C:\\Users\\benma\\.nuget\\packages\\",
-      "outputPath": "c:\\Users\\benma\\New folder\\Excel-Contract-Engine-1\\ExcelRenderer.Functions.Tests\\obj\\",
+      "projectPath": "/home/runner/work/Excel-Contract-Engine/Excel-Contract-Engine/ExcelRenderer.Functions.Tests/ExcelRenderer.Functions.Tests.csproj",
+      "packagesPath": "/home/runner/.nuget/packages/",
+      "outputPath": "/home/runner/work/Excel-Contract-Engine/Excel-Contract-Engine/ExcelRenderer.Functions.Tests/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "C:\\Users\\benma\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        "/home/runner/.nuget/NuGet/NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net8.0"
@@ -6014,8 +6014,8 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "projectReferences": {
-            "c:\\Users\\benma\\New folder\\Excel-Contract-Engine-1\\ExcelRenderer.Functions\\ExcelRenderer.Functions.csproj": {
-              "projectPath": "c:\\Users\\benma\\New folder\\Excel-Contract-Engine-1\\ExcelRenderer.Functions\\ExcelRenderer.Functions.csproj"
+            "/home/runner/work/Excel-Contract-Engine/Excel-Contract-Engine/ExcelRenderer.Functions/ExcelRenderer.Functions.csproj": {
+              "projectPath": "/home/runner/work/Excel-Contract-Engine/Excel-Contract-Engine/ExcelRenderer.Functions/ExcelRenderer.Functions.csproj"
             }
           }
         }
@@ -6030,7 +6030,7 @@
         "auditLevel": "low",
         "auditMode": "direct"
       },
-      "SdkAnalysisLevel": "9.0.200"
+      "SdkAnalysisLevel": "10.0.200"
     },
     "frameworks": {
       "net8.0": {
@@ -6062,26 +6062,12 @@
         ],
         "assetTargetFallback": true,
         "warn": true,
-        "downloadDependencies": [
-          {
-            "name": "Microsoft.AspNetCore.App.Ref",
-            "version": "[8.0.17, 8.0.17]"
-          },
-          {
-            "name": "Microsoft.NETCore.App.Ref",
-            "version": "[8.0.17, 8.0.17]"
-          },
-          {
-            "name": "Microsoft.WindowsDesktop.App.Ref",
-            "version": "[8.0.17, 8.0.17]"
-          }
-        ],
         "frameworkReferences": {
           "Microsoft.NETCore.App": {
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.205/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/10.0.201/PortableRuntimeIdentifierGraph.json"
       }
     }
   }

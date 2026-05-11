@@ -177,32 +177,71 @@ public sealed class ExcelRenderService
 
             var colAddr = start.col + colIndex;
             var range = ws.Range(dataStartRow, colAddr, lastRow, colAddr);
-            var cf = range.AddConditionalFormat();
             var fill = ParseFillColor(rule.FillColor);
 
+            // AddConditionalFormat() is called only inside each branch so that no empty
+            // CF objects are left on the worksheet (ClosedXML throws on save if a CF has
+            // no condition attached to it).
             switch (rule.Op.ToLowerInvariant())
             {
                 case "greater_than":
                     if (rule.Value is { } v1 && TryDouble(v1, out var d1))
-                        cf.WhenGreaterThan(d1).Fill.SetBackgroundColor(fill);
+                        range.AddConditionalFormat().WhenGreaterThan(d1).Fill.SetBackgroundColor(fill);
                     break;
                 case "less_than":
                     if (rule.Value is { } v2 && TryDouble(v2, out var d2))
-                        cf.WhenLessThan(d2).Fill.SetBackgroundColor(fill);
+                        range.AddConditionalFormat().WhenLessThan(d2).Fill.SetBackgroundColor(fill);
                     break;
                 case "equal":
-                    if (rule.Value is { } v3 && TryDouble(v3, out var d3))
-                        cf.WhenEquals(d3).Fill.SetBackgroundColor(fill);
+                    if (rule.Value is { } v3)
+                    {
+                        if (TryDouble(v3, out var d3))
+                        {
+                            range.AddConditionalFormat().WhenEquals(d3).Fill.SetBackgroundColor(fill);
+                        }
+                        else
+                        {
+                            var text = v3.ValueKind == JsonValueKind.String ? v3.GetString() : v3.ToString();
+                            if (!string.IsNullOrEmpty(text))
+                            {
+                                var formula = BuildTextEqualFormula(colAddr, dataStartRow, text);
+                                range.AddConditionalFormat().WhenIsTrue(formula).Fill.SetBackgroundColor(fill);
+                            }
+                        }
+                    }
                     break;
                 case "between":
                     if (rule.Value is { } va && rule.Value2 is { } vb
                         && TryDouble(va, out var a) && TryDouble(vb, out var b))
-                        cf.WhenBetween(a, b).Fill.SetBackgroundColor(fill);
+                        range.AddConditionalFormat().WhenBetween(a, b).Fill.SetBackgroundColor(fill);
                     break;
                 default:
                     break;
             }
         }
+    }
+
+    /// <summary>
+    /// Builds a formula-based conditional format expression for text equality,
+    /// e.g. <c>D2="Healthy"</c>.  The cell reference is relative so Excel shifts
+    /// it for every row in the applied range.
+    /// </summary>
+    private static string BuildTextEqualFormula(int col, int row, string text)
+    {
+        var escaped = text.Replace("\"", "\"\"");
+        return $"{ToColumnLetter(col)}{row}=\"{escaped}\"";
+    }
+
+    private static string ToColumnLetter(int col)
+    {
+        var result = "";
+        while (col > 0)
+        {
+            col--;
+            result = (char)('A' + col % 26) + result;
+            col /= 26;
+        }
+        return result;
     }
 
     private static XLColor ParseFillColor(string? fillColor)

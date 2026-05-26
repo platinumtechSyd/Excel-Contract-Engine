@@ -42,7 +42,7 @@ public sealed class RenderExcelFunction
         if (!body.ok)
             return await Text(req, HttpStatusCode.BadRequest, body.error!);
 
-        var maxRequestBytes = ReadIntSetting("MAX_REQUEST_BYTES", 5_000_000);
+        var maxRequestBytes = ReadIntSetting("MAX_REQUEST_BYTES", 10_000_000);
         if (Encoding.UTF8.GetByteCount(body.json!) > maxRequestBytes)
             return await Text(req, HttpStatusCode.BadRequest, $"Request exceeds MAX_REQUEST_BYTES ({maxRequestBytes}).");
 

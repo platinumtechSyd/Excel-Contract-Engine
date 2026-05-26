@@ -6,6 +6,8 @@ param appInsightsName string
 @description('Required. Must be non-empty; the Function App rejects protected routes if RENDER_API_KEY is missing.')
 param renderApiKey string
 param defaultTableTheme string = 'TableStyleMedium2'
+param maxRequestBytes int = 50000000
+param maxRowsPerSheet int = 20000
 
 resource storage 'Microsoft.Storage/storageAccounts@2023-05-01' = {
   name: storageAccountName
@@ -80,6 +82,14 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
         {
           name: 'DEFAULT_TABLE_THEME'
           value: defaultTableTheme
+        }
+        {
+          name: 'MAX_REQUEST_BYTES'
+          value: string(maxRequestBytes)
+        }
+        {
+          name: 'MAX_ROWS_PER_SHEET'
+          value: string(maxRowsPerSheet)
         }
       ]
     }

@@ -84,7 +84,7 @@ public sealed class RewstExcelFunction
         if (!unwrap.ok)
             return await Json(req, unwrap.code, unwrap.body!);
 
-        var maxRequestBytes = ReadIntSetting("MAX_REQUEST_BYTES", 10_000_000);
+        var maxRequestBytes = ReadIntSetting("MAX_REQUEST_BYTES", 50_000_000);
         if (Encoding.UTF8.GetByteCount(unwrap.innerJson!) > maxRequestBytes)
         {
             return await Json(req, HttpStatusCode.BadRequest, new
@@ -143,7 +143,7 @@ public sealed class RewstExcelFunction
         if (!unwrap.ok)
             return await Json(req, unwrap.code, unwrap.body!);
 
-        var maxRequestBytes = ReadIntSetting("MAX_REQUEST_BYTES", 10_000_000);
+        var maxRequestBytes = ReadIntSetting("MAX_REQUEST_BYTES", 50_000_000);
         if (Encoding.UTF8.GetByteCount(unwrap.innerJson!) > maxRequestBytes)
         {
             return await Json(req, HttpStatusCode.BadRequest, ValidationFailure(

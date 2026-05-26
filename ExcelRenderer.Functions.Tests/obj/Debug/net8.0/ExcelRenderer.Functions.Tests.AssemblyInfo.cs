@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ExcelRenderer.Functions.Tests")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+16d9785ae14828d88fffbf33308ca1a73c67e68c")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+77ef3871741ec8d80c42c8b0595330ff00180e37")]
 [assembly: System.Reflection.AssemblyProductAttribute("ExcelRenderer.Functions.Tests")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ExcelRenderer.Functions.Tests")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

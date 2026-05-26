@@ -138,7 +138,7 @@ Secrets in Key Vault are easiest when the Function App has a **managed identity*
 
 **Microsoft Graph + SharePoint:** Full Entra steps—**[ENTRA_GRAPH_SETUP.md](./ENTRA_GRAPH_SETUP.md)**.
 
-Summary: register app, Graph **application** permissions (prefer **`Sites.Selected`** + per-site grant), admin consent, secret → map to `GRAPH_*`. Upload limit **250 MB** per single PUT; larger files need upload sessions (not implemented here). Folder path must exist.
+Summary: register app, Graph **application** permissions (prefer **`Sites.Selected`** + per-site grant), admin consent, secret → map to `GRAPH_*`. Upload limit **10 MB**. Folder path must exist.
 
 Click **Save** when done (app restarts).
 
@@ -339,7 +339,7 @@ This app does **not** implement every control by itself—combine it with Azure 
 | Topic | What the code does | What you should do |
 |--------|---------------------|---------------------|
 | **API authentication** | **`RENDER_API_KEY`** must be **non-empty**. Clients must send **`X-Api-Key`** or **`Authorization: Bearer`** with that value, or they get **403**. If the app setting is **missing or empty**, protected routes return **503**. | **Always set** a strong key in **production** and **local** (`local.settings.json` / user secrets). Use **Key Vault references** in Azure ([Step 5](#step-5--store-secrets-in-azure-key-vault-recommended)). |
-| **Abuse and payload size** | Enforces **`MAX_REQUEST_BYTES`** (body / `payload_json` size) and **`MAX_ROWS_PER_SHEET`** during render. SharePoint upload is capped at **250 MB** decoded (Graph single-PUT limit). | Set limits appropriate for your data. Use [Application Insights alerts](#step-10--application-insights-monitoring-and-alerts-recommended) for spikes and 5xx. |
+| **Abuse and payload size** | Enforces **`MAX_REQUEST_BYTES`** (body / `payload_json` size) and **`MAX_ROWS_PER_SHEET`** during render. SharePoint upload is capped at **10 MB** decoded. | Set limits appropriate for your data. Use [Application Insights alerts](#step-10--application-insights-monitoring-and-alerts-recommended) for spikes and 5xx. |
 | **Rate limiting** | No per-caller rate limit inside the function code. | **Strongly recommended:** [Step 12](#step-12--strongly-recommended-restrict-access-to-rewst-outbound-ips) **Rewst IP allowlists** where your SKU supports it. Optionally add **Azure Front Door**, **API Management**, or **WAF** if the hostname is broadly exposed. |
 | **Secrets** | Reads `RENDER_API_KEY`, `GRAPH_*` from app settings. | Store values in **Key Vault** and use **references** in Configuration; rotate on a schedule ([Step 5](#step-5--store-secrets-in-azure-key-vault-recommended), [Step 11](#step-11--ongoing-microsoft-graph-and-sharepoint-if-used)). |
 | **Microsoft Graph / SharePoint** | Client credentials; validates site/drive exclusivity and file size. | Prefer **`Sites.Selected`** and per-site grants ([ENTRA_GRAPH_SETUP.md](./ENTRA_GRAPH_SETUP.md)). Treat **`folder_path`** and **`file_name`** as **trusted** (workflow-controlled); avoid passing end-user-controlled path strings straight through without review. |

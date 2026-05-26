@@ -9,11 +9,9 @@ namespace ExcelRenderer.Functions.Services;
 public sealed class GraphSharePointUploadService
 {
     /// <summary>
-    /// Matches Microsoft Graph <c>PUT …/content</c> limit for a single request (see
-    /// <see href="https://learn.microsoft.com/en-us/graph/api/driveitem-put-content?view=graph-rest-1.0">Upload small files</see>).
-    /// Larger files require an upload session; this API does not accept files above this size.
+    /// Maximum file size allowed for upload (10 MB).
     /// </summary>
-    private const long MaxFileBytes = 250L * 1024 * 1024;
+    private const long MaxFileBytes = 10L * 1024 * 1024;
 
     private readonly HttpClient _http;
     private readonly IConfiguration _config;
@@ -68,7 +66,7 @@ public sealed class GraphSharePointUploadService
         {
             return SharePointUploadResult.Fail(
                 "FILE_TOO_LARGE",
-                $"File size ({bytes.Length} bytes) exceeds maximum ({MaxFileBytes} bytes). Graph single-request uploads are limited to 250 MB; use an upload session for larger files.");
+                $"File size ({bytes.Length} bytes) exceeds maximum ({MaxFileBytes} bytes).");
         }
 
         var token = await GetAppTokenAsync(tenantId, clientId, clientSecret, cancellationToken);

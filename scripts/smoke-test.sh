@@ -15,12 +15,15 @@ if [[ -z "$KEY" ]]; then
   exit 1
 fi
 
+TMPDIR="$(mktemp -d)"
+trap 'rm -rf "$TMPDIR"' EXIT
+
 BODY='{"schema_version":"1.0","workbook":{"worksheets":[{"name":"Sheet1","blocks":[{"type":"table","start_cell":"A1","columns":[{"key":"a","header":"A","type":"string"}],"rows":[{"a":"ok"}]}]}]}}'
 
 echo "GET ${BASE_URL}/api/health"
-code=$(curl -s -o /tmp/health.json -w "%{http_code}" "${BASE_URL}/api/health")
+code=$(curl -s -o "${TMPDIR}/health.json" -w "%{http_code}" "${BASE_URL}/api/health")
 if [[ "$code" != "200" ]]; then echo "Expected 200 from health, got $code" >&2; exit 1; fi
-grep -q '"status"' /tmp/health.json && grep -q 'auth_configured' /tmp/health.json || { cat /tmp/health.json; exit 1; }
+grep -q '"status"' "${TMPDIR}/health.json" && grep -q 'auth_configured' "${TMPDIR}/health.json" || { cat "${TMPDIR}/health.json"; exit 1; }
 
 echo "POST /api/validate without X-Api-Key (expect 403)"
 code=$(curl -s -o /dev/null -w "%{http_code}" -X POST "${BASE_URL}/api/validate" \
@@ -28,9 +31,9 @@ code=$(curl -s -o /dev/null -w "%{http_code}" -X POST "${BASE_URL}/api/validate"
 if [[ "$code" != "403" ]]; then echo "Expected 403 without API key, got $code" >&2; exit 1; fi
 
 echo "POST /api/validate with X-Api-Key (expect 200)"
-code=$(curl -s -o /tmp/val.json -w "%{http_code}" -X POST "${BASE_URL}/api/validate" \
+code=$(curl -s -o "${TMPDIR}/val.json" -w "%{http_code}" -X POST "${BASE_URL}/api/validate" \
   -H "Content-Type: application/json" -H "X-Api-Key: ${KEY}" -d "$BODY")
-if [[ "$code" != "200" ]]; then echo "Expected 200 with API key, got $code" >&2; cat /tmp/val.json; exit 1; fi
-grep -qE '"valid"( )*:( )*true' /tmp/val.json || { cat /tmp/val.json; exit 1; }
+if [[ "$code" != "200" ]]; then echo "Expected 200 with API key, got $code" >&2; cat "${TMPDIR}/val.json"; exit 1; fi
+grep -qE '"valid"( )*:( )*true' "${TMPDIR}/val.json" || { cat "${TMPDIR}/val.json"; exit 1; }
 
 echo "Smoke test passed."

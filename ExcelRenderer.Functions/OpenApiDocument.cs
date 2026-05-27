@@ -178,11 +178,27 @@ internal static class OpenApiDocument
           "code": {
             "type": "string",
             "enum": [
+              "VALIDATION_PARSE_ERROR",
+              "CONTRACT_ROOT_INVALID",
+              "TIER_MISMATCH_TIER1_EXPECT_WORKBOOK",
+              "TIER_MISMATCH_TIER2_EXPECT_SHEETS",
+              "PAYLOAD_TOO_LARGE",
+              "UNSUPPORTED_SCHEMA_VERSION",
+              "WORKBOOK_MISSING",
+              "EMPTY_WORKBOOK",
+              "EMPTY_SHEETS",
+              "WORKSHEET_NO_BLOCKS",
+              "TABLE_NO_COLUMNS",
+              "INVALID_START_CELL",
+              "CF_UNKNOWN_COLUMN",
+              "ROW_RULE_WHEN_INVALID",
+              "ROW_RULE_UNKNOWN_COLUMN",
+              "SHEET_SOURCE_REQUIRED",
               "SRC_NOT_FOUND",
               "JOIN_KEY_MISSING",
               "PRIMARY_SOURCE_NOT_FOUND",
               "COL_OMITTED_EMPTY_SOURCE",
-              "VALIDATION_PARSE_ERROR"
+              "RENDER_FAILED"
             ]
           },
           "message": { "type": "string" },

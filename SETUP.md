@@ -130,7 +130,7 @@ Secrets in Key Vault are easiest when the Function App has a **managed identity*
 | `FUNCTIONS_WORKER_RUNTIME` | `dotnet-isolated` | Required runtime mode. **Flex Consumption:** platform may manage this; follow portal guidance if manual setting conflicts. |
 | `RENDER_API_KEY` | Key Vault reference or plain (dev) | Must match Rewst `X-Api-Key`. |
 | `DEFAULT_TABLE_THEME` | `TableStyleMedium2` | Optional. |
-| `MAX_REQUEST_BYTES` | `10000000` | Abuse guard; add if missing. |
+| `MAX_REQUEST_BYTES` | `50000000` | Abuse guard; add if missing. |
 | `MAX_ROWS_PER_SHEET` | `20000` | Abuse guard; add if missing. |
 | `GRAPH_TENANT_ID` | Entra tenant GUID | For **`POST /api/rewst/sharepoint/upload`**. |
 | `GRAPH_CLIENT_ID` | App registration (client) ID | Same. |

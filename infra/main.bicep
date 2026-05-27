@@ -4,6 +4,7 @@ param functionAppName string
 param storageAccountName string
 param appInsightsName string
 @description('Required. Must be non-empty; the Function App rejects protected routes if RENDER_API_KEY is missing.')
+@secure()
 param renderApiKey string
 param defaultTableTheme string = 'TableStyleMedium2'
 param maxRequestBytes int = 50000000

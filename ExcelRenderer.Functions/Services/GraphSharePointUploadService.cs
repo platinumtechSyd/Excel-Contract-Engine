@@ -82,6 +82,10 @@ public sealed class GraphSharePointUploadService
 
             return await PutContentAsync(token, payload.SiteId!.Trim(), relativePath, bytes, contentType, payload.Overwrite, cancellationToken);
         }
+        catch (ArgumentException ex)
+        {
+            return SharePointUploadResult.Fail("VALIDATION_ERROR", ex.Message);
+        }
         catch (HttpRequestException ex)
         {
             _logger.LogWarning(ex, "Graph upload HTTP error");
@@ -113,17 +117,36 @@ public sealed class GraphSharePointUploadService
             return null;
         }
 
-        using var doc = JsonDocument.Parse(body);
-        return doc.RootElement.GetProperty("access_token").GetString();
+        try
+        {
+            using var doc = JsonDocument.Parse(body);
+            return doc.RootElement.GetProperty("access_token").GetString();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to parse access_token from token response");
+            return null;
+        }
     }
 
     private static string BuildRelativePath(string? folderPath, string fileName)
     {
         var folder = (folderPath ?? "").Trim().Replace('\\', '/').Trim('/');
-        var name = fileName.Trim().Replace('\\', '/');
+        var name = fileName.Trim().Replace('\\', '/').TrimStart('/');
+
+        // Reject path traversal segments
+        if (ContainsTraversal(folder) || ContainsTraversal(name))
+            throw new ArgumentException("Path must not contain '..' segments.");
+
         if (string.IsNullOrEmpty(folder))
             return name;
         return $"{folder}/{name}";
+    }
+
+    private static bool ContainsTraversal(string path)
+    {
+        var segments = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        return segments.Any(s => s == "..");
     }
 
     /// <summary>PUT /sites/{site_id}/drive/root:/{path}:/content — Graph supports up to 250 MB per request.</summary>
@@ -150,7 +173,7 @@ public sealed class GraphSharePointUploadService
         if (!response.IsSuccessStatusCode)
         {
             _logger.LogWarning("PUT upload failed: {Status} {Body}", response.StatusCode, body);
-            return SharePointUploadResult.Fail("GRAPH_UPLOAD_FAILED", $"{response.StatusCode}: {body}");
+            return SharePointUploadResult.Fail("GRAPH_UPLOAD_FAILED", $"Graph API returned {response.StatusCode}. Check application logs for details.");
         }
 
         using var doc = JsonDocument.Parse(body);

@@ -3,3 +3,7 @@
 *.user
 .DS_Store
 Thumbs.db
+
+# Build outputs (all projects)
+[Bb]in/
+[Oo]bj/

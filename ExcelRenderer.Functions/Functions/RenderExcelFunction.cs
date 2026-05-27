@@ -157,7 +157,7 @@ public sealed class RenderExcelFunction
     private async Task<(bool ok, string? json, string? error)> ReadBody(HttpRequestData req)
     {
         try { return (true, await new StreamReader(req.Body, Encoding.UTF8).ReadToEndAsync(), null); }
-        catch { return (false, null, "Request body could not be read."); }
+        catch (Exception ex) { _logger.LogWarning(ex, "Failed to read request body"); return (false, null, "Request body could not be read."); }
     }
 
     private async Task<HttpResponseData> Text(HttpRequestData req, HttpStatusCode code, string text)

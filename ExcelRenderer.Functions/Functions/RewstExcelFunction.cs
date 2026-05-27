@@ -262,8 +262,9 @@ public sealed class RewstExcelFunction
         {
             raw = await new StreamReader(req.Body, Encoding.UTF8).ReadToEndAsync();
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogWarning(ex, "Failed to read request body");
             return (false, HttpStatusCode.BadRequest, ValidationFailure("VALIDATION_PARSE_ERROR", "Request body could not be read."), null);
         }
 

@@ -49,8 +49,9 @@ public sealed class RewstSharePointUploadFunction
         {
             raw = await new StreamReader(req.Body, Encoding.UTF8).ReadToEndAsync();
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogWarning(ex, "Failed to read request body");
             return await Json(req, HttpStatusCode.BadRequest, new { valid = false, error = "Request body could not be read." });
         }
 

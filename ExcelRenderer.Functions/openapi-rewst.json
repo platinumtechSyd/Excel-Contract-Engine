@@ -2,8 +2,8 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Excel Renderer (Rewst)",
-    "version": "2.1.0",
-    "description": "Rewst integration: validate and render Excel using payload_json (stringified inner contract). Use tier 1 routes when the inner JSON has a workbook root; use tier 2 routes when it has sources and sheets. The Function App must have RENDER_API_KEY set; send the same value as X-Api-Key (or Authorization: Bearer). Wrong or missing client credentials: 403. If RENDER_API_KEY is not configured on the server: 503. Strongly recommended: restrict inbound traffic to Rewst outbound IPs (see repository SETUP.md). Optional X-Correlation-Id for tracing logs. Examples are synthetic. No warranty or guaranteed support—see repository README. REWST_PAYLOAD_GUIDE.md, REWST_SUBWORKFLOW.md, ERROR_CODES.md."
+    "version": "2.2.0",
+    "description": "Rewst integration: validate and render Excel using payload_json (stringified inner contract). Use tier 1 routes when the inner JSON has a workbook root; use tier 2 routes when it has sources and sheets. Fetch PDF: POST /api/rewst/fetch-pdf to download a remote PDF and receive base64. The Function App must have RENDER_API_KEY set; send the same value as X-Api-Key (or Authorization: Bearer). Wrong or missing client credentials: 403. If RENDER_API_KEY is not configured on the server: 503. Strongly recommended: restrict inbound traffic to Rewst outbound IPs (see repository SETUP.md). Optional X-Correlation-Id for tracing logs. Examples are synthetic. No warranty or guaranteed support—see repository README. REWST_PAYLOAD_GUIDE.md, REWST_SUBWORKFLOW.md, ERROR_CODES.md."
   },
   "servers": [
     {
@@ -285,6 +285,88 @@
           },
           "403": {
             "description": "Missing or invalid API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "RENDER_API_KEY is not configured on the Function App",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/rewst/fetch-pdf": {
+      "post": {
+        "summary": "Fetch a PDF from a URL and return it as base64",
+        "description": "Downloads a PDF (or any file) from the supplied URL and returns the content as a base64-encoded string inside a JSON envelope. Useful for retrieving remote PDFs for downstream processing without leaving Rewst.",
+        "operationId": "rewstFetchPdf",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FetchPdfRequest"
+              },
+              "examples": {
+                "simplePdf": {
+                  "summary": "Fetch a PDF by URL",
+                  "value": {
+                    "url": "https://example.com/reports/invoice-2026-04.pdf"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "PDF fetched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FetchPdfResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request (missing or invalid URL)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing or invalid API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Remote URL returned an error or could not be reached",
             "content": {
               "application/json": {
                 "schema": {
@@ -609,6 +691,54 @@
           },
           "message": {
             "type": "string"
+          }
+        }
+      },
+      "FetchPdfRequest": {
+        "type": "object",
+        "required": [
+          "url"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Absolute http or https URL of the PDF to fetch.",
+            "example": "https://example.com/reports/invoice-2026-04.pdf"
+          }
+        }
+      },
+      "FetchPdfResponse": {
+        "type": "object",
+        "required": [
+          "status",
+          "file_name",
+          "content_type",
+          "content_base64",
+          "size_bytes"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "ok"
+          },
+          "file_name": {
+            "type": "string",
+            "description": "Filename from Content-Disposition header, URL path, or 'document.pdf'."
+          },
+          "content_type": {
+            "type": "string",
+            "example": "application/pdf"
+          },
+          "content_base64": {
+            "type": "string",
+            "format": "byte",
+            "description": "Base64-encoded file bytes."
+          },
+          "size_bytes": {
+            "type": "integer",
+            "description": "Size of the fetched file in bytes."
           }
         }
       }

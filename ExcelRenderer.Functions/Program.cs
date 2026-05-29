@@ -18,5 +18,10 @@ builder.Services.AddHttpClient<GraphSharePointUploadService>(client =>
 {
     client.Timeout = TimeSpan.FromMinutes(15);
 });
+builder.Services.AddHttpClient("FetchPdf", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(60);
+    client.DefaultRequestHeaders.Add("Accept", "application/pdf,*/*");
+});
 
 builder.Build().Run();

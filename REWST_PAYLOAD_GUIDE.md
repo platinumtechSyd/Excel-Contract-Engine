@@ -1,6 +1,6 @@
 # Rewst payload guide
 
-This project’s **Rewst** integration (from **`/api/openapi-rewst.json`**) exposes **five** POST actions: tier 1 vs tier 2 × validate vs render, plus **SharePoint upload**. Validate/render actions use **`payload_json`** (stringified contract JSON). SharePoint upload uses **direct JSON fields only** (no wrapper).
+This project's **Rewst** integration (from **`/api/openapi-rewst.json`**) exposes **six** POST actions: tier 1 vs tier 2 × validate vs render, **fetch PDF**, plus **SharePoint upload**. Validate/render actions use **`payload_json`** (stringified contract JSON). Fetch PDF and SharePoint upload use **direct JSON fields only** (no wrapper).
 
 **Operators:** Fork, deploy your own instance, and supply your own API key—see [README — Fork, deploy, and API keys](./README.md#fork-deploy-and-api-keys-operators) and **[SETUP.md](./SETUP.md)** (Azure). As-is; no guaranteed support.
 
@@ -12,6 +12,7 @@ This project’s **Rewst** integration (from **`/api/openapi-rewst.json`**) expo
 | Render tier 1 | `POST` | `/api/rewst/tier1/render` |
 | Validate tier 2 (inner JSON has `sheets`) | `POST` | `/api/rewst/tier2/validate` |
 | Render tier 2 | `POST` | `/api/rewst/tier2/render` |
+| Fetch PDF from URL and return as base64 | `POST` | `/api/rewst/fetch-pdf` |
 | Upload file to SharePoint (Graph; direct JSON upload fields) | `POST` | `/api/rewst/sharepoint/upload` |
 | Rewst OpenAPI spec | `GET` | `/api/openapi-rewst.json` |
 
@@ -28,6 +29,36 @@ Recommended pattern: **validate then render** using matching tier routes ([REWST
 ```
 
 Build `payload_json` by serializing your contract object to a string (escape quotes as required). The **inner** JSON is what the sections below describe (except for SharePoint upload).
+
+## Fetch PDF (URL → base64)
+
+**Route:** `POST /api/rewst/fetch-pdf` — **direct body only**. Downloads a file from a remote URL and returns the content as a base64-encoded string. Useful for retrieving PDFs (invoices, reports, etc.) for downstream Rewst processing.
+
+| Field | Required | Notes |
+|-------|----------|--------|
+| `url` | Yes | Absolute http/https URL of the file to fetch. |
+
+**Example:**
+
+```json
+{
+  "url": "https://example.com/reports/invoice-2026-04.pdf"
+}
+```
+
+**Response (200):**
+
+```json
+{
+  "status": "ok",
+  "file_name": "invoice-2026-04.pdf",
+  "content_type": "application/pdf",
+  "content_base64": "<base64 encoded bytes>",
+  "size_bytes": 48320
+}
+```
+
+Errors use **`error`** (same shape as auth errors). `502` means the remote URL failed or was unreachable.
 
 ## SharePoint upload (optional)
 
